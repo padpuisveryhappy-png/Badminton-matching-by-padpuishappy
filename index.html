@@ -191,7 +191,7 @@ thead th { font-weight: 500; color: var(--ink-2); }
           </label>
           <div class="row">
             <button type="button" class="btn" id="btn-undo">ย้อนกลับ</button>
-            <button type="button" class="btn" id="btn-reset">เริ่มนับใหม่</button>
+            <button type="button" class="btn" id="btn-reset">เริ่มนับใหม่ (เก็บรายชื่อ)</button>
           </div>
           <p class="status" id="status" role="status" aria-live="polite"></p>
         </div>
@@ -228,6 +228,7 @@ thead th { font-weight: 500; color: var(--ink-2); }
         <textarea id="new-names" rows="3" placeholder="เช่น&#10;ต้น&#10;ฝน, แบงค์"></textarea>
         <div class="row" style="margin-top:8px">
           <button type="button" class="btn" id="btn-add">เพิ่มรายชื่อ</button>
+          <button type="button" class="btn" id="btn-clear-names">ล้างรายชื่อทั้งหมด</button>
         </div>
         <p class="note" style="margin-top:10px">เลขหน้าชื่อคือลำดับการมาถึง คนมาก่อนได้ลงก่อน คนที่มาทีหลังหรือติ๊กกลับมาใหม่จะไปต่อท้ายคิว ติ๊กออกเมื่อมีคนกลับก่อน ถ้าคนนั้นอยู่บนคอร์ท จะออกเมื่อเกมนั้นจบ</p>
         <ul class="plist" id="plist"></ul>
@@ -470,7 +471,7 @@ function settle(state, exceptIndex) {
   }
   function disarm() {
     clearTimeout(armTimer); armTimer = null;
-    var b = $('btn-reset'); b.textContent = 'เริ่มนับใหม่'; b.classList.remove('btn-danger-armed');
+    var b = $('btn-reset'); b.textContent = 'เริ่มนับใหม่ (เก็บรายชื่อ)'; b.classList.remove('btn-danger-armed');
   }
   function liveCount() { return state.courts.filter(function (c) { return c.cur; }).length; }
 
@@ -550,6 +551,27 @@ function settle(state, exceptIndex) {
     save(); render(); setStatus('ล้างประวัติทุกเกมแล้ว รายชื่อยังอยู่ครบ และเริ่มเกมใหม่ตามลำดับการมาถึง');
   }
 
+  var armNames = null;
+  function disarmNames() {
+    clearTimeout(armNames); armNames = null;
+    var b = $('btn-clear-names'); b.textContent = 'ล้างรายชื่อทั้งหมด'; b.classList.remove('btn-danger-armed');
+  }
+  function clearNames() {
+    if (!state.players.length) return;
+    if (!armNames) {
+      var b = $('btn-clear-names'); b.textContent = 'กดอีกครั้งเพื่อลบทุกคน'; b.classList.add('btn-danger-armed');
+      armNames = setTimeout(disarmNames, 3500);
+      return;
+    }
+    disarmNames();
+    var n = state.players.length;
+    state.players = []; state.log = []; state.sample = false; state.nextId = 1; state.leftAt = {}; state.seq = 0; undoStack = [];
+    state.courts = state.courts.filter(function (c) { return !c.closing; }).map(function () { return newCourt(); });
+    if (!state.courts.length) state.courts = [newCourt()];
+    save(); render();
+    setStatus('ล้างรายชื่อ ' + n + ' คนและประวัติเกมแล้ว ใส่ชื่อชุดใหม่ได้เลย');
+  }
+
   function courtsInc() {
     var last = state.courts[state.courts.length - 1];
     if (last.closing) { last.closing = false; save(); render(); setStatus('ยกเลิกการปิดคอร์ทที่ ' + state.courts.length); return; }
@@ -580,6 +602,7 @@ function settle(state, exceptIndex) {
 
   function renderPlayers() {
     var stats = computeStats(allIds(), allGames(state));
+    $('btn-clear-names').disabled = !state.players.length;
     $('pl-count').textContent = '(' + activePlayers().length + ' คนพร้อมเล่น จากทั้งหมด ' + state.players.length + ')';
     $('sample-note').innerHTML = state.sample
       ? '<p class="sample"><span>รายชื่อตัวอย่าง แก้ไขได้ตามต้องการ</span><button type="button" class="btn" id="btn-clear-sample">ล้างรายชื่อตัวอย่าง</button></p>' : '';
@@ -694,6 +717,7 @@ function settle(state, exceptIndex) {
   $('courts-dec').addEventListener('click', courtsDec);
   $('courts-inc').addEventListener('click', courtsInc);
   $('btn-undo').addEventListener('click', undo);
+  $('btn-clear-names').addEventListener('click', clearNames);
   $('btn-reset').addEventListener('click', resetAll);
   $('opt-keep').addEventListener('change', function (e) { state.keep = e.target.checked; save(); setStatus(state.keep ? 'ผู้ชนะที่อยู่ต่อจะเป็นคู่หูเดิม (มีผลกับเกมถัดไป)' : 'โปรแกรมจะแบ่งทีมใหม่เพื่อไม่ให้คู่ซ้ำ'); });
   $('btn-add').addEventListener('click', function () { var ta = $('new-names'); if (addNames(ta.value)) ta.value = ''; });
