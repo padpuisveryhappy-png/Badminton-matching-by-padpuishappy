@@ -73,7 +73,7 @@ header.top p { margin: 0; color: var(--ink-2); max-width: 70ch; }
 .col { display: contents; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
 .panel h2 { font-size: 1.1rem; margin-bottom: 12px; }
-.sec-controls { order: 1; } .sec-round { order: 2; } .sec-players { order: 3; } .sec-history { order: 4; } .sec-stats { order: 5; }
+.sec-controls { order: 1; } .sec-round { order: 2; } .sec-players { order: 3; } .sec-history { order: 4; } .sec-results { order: 5; } .sec-stats { order: 6; }
 @media (min-width: 880px) {
   .layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: start; gap: 20px; }
   .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
@@ -108,6 +108,17 @@ header.top p { margin: 0; color: var(--ink-2); max-width: 70ch; }
   display: grid; grid-template-columns: 1fr 8px 1fr; background: var(--court); color: var(--court-ink);
   border: 2px solid var(--court-line); border-radius: 4px; min-height: 160px;
 }
+.sh-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.sh-step { display: flex; align-items: center; gap: 6px; }
+.sh-step button { min-width: 44px; min-height: 44px; font-size: 1.2rem; }
+.sh-step output { min-width: 2ch; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 1.1rem; }
+.sh-sum { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 8px 0; }
+.sh-sum label { display: flex; align-items: center; gap: 8px; }
+.sh-sum input { width: 6.5em; min-height: 40px; font: inherit; border-radius: 8px; border: 1px solid var(--court-line); background: var(--surface); color: var(--ink); padding: 0 8px; }
+.edit-panel { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); display: grid; gap: 8px; }
+.edit-panel .erow { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; align-items: center; }
+.edit-panel select { min-height: 40px; font: inherit; border-radius: 8px; border: 1px solid var(--court-line); background: var(--surface); color: var(--ink); padding: 0 8px; min-width: 0; }
+.edit-link { margin-top: 8px; }
 .half { position: relative; display: grid; grid-template-rows: 1fr 1fr; min-width: 0; }
 .half .pl { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 8px; text-align: center; font-weight: 700; font-size: 1.05rem; overflow-wrap: anywhere; position: relative; z-index: 1; }
 .half .pl + .pl { border-top: 2px solid var(--court-line); }
@@ -127,6 +138,11 @@ header.top p { margin: 0; color: var(--ink-2); max-width: 70ch; }
 .chip.next { background: var(--accent); color: var(--accent-ink); }
 .chip.next b { color: inherit; opacity: 0.8; }
 .empty { border: 2px dashed var(--line); border-radius: 10px; padding: 24px 16px; text-align: center; color: var(--ink-2); }
+
+.score-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.score-row label { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; color: var(--ink-2); min-width: 0; }
+.score-row input { width: 100%; min-height: 46px; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 10px; font-size: 1.2rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; color: var(--ink); }
+.res-win { color: var(--accent); font-weight: 700; }
 
 /* รายชื่อผู้เล่น */
 textarea { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 76px; }
@@ -165,6 +181,7 @@ thead th { font-weight: 500; color: var(--ink-2); }
 <style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
+
 <div class="page">
   <header class="top">
     <h1>จัดคู่ตีแบด</h1>
@@ -189,6 +206,10 @@ thead th { font-weight: 500; color: var(--ink-2); }
             <input type="checkbox" id="opt-keep">
             <span>ผู้ชนะที่อยู่ต่อเป็นคู่หูเดิม <span class="note">(ปกติโปรแกรมแบ่งทีมใหม่เพื่อไม่ให้คู่ซ้ำ ถ้าติ๊กนี้คู่ซ้ำจะเพิ่มขึ้น)</span></span>
           </label>
+          <label class="check" for="opt-lock">
+            <input type="checkbox" id="opt-lock">
+            <span>ล็อกคู่ในคิว <span class="note">(คนที่รออยู่ถูกจับคู่ล่วงหน้า ทุกคนเห็นว่าถัดไปคู่กับใคร คู่ที่ชนะเกมแรกจะอยู่ต่อเป็นคู่เดิม)</span></span>
+          </label>
           <div class="row">
             <button type="button" class="btn" id="btn-undo">ย้อนกลับ</button>
             <button type="button" class="btn" id="btn-reset">เริ่มนับใหม่ (เก็บรายชื่อ)</button>
@@ -202,6 +223,23 @@ thead th { font-weight: 500; color: var(--ink-2); }
       <section class="panel sec-history" aria-label="เกมที่จบแล้ว">
         <h2>เกมที่จบแล้ว</h2>
         <div id="history"></div>
+      </section>
+
+      <section class="panel sec-results" aria-label="สถิติแพ้ชนะ">
+        <h2>สถิติแพ้ชนะ</h2>
+        <div class="seg" role="group" aria-label="เลือกมุมมอง">
+          <button type="button" id="rs-player" aria-pressed="true">รายบุคคล</button>
+          <button type="button" id="rs-pair" aria-pressed="false">รายคู่</button>
+        </div>
+        <div class="scroll-x"><table id="result-table"></table></div>
+        <p class="note" id="result-note" style="margin-top:8px"></p>
+      </section>
+      <section class="panel sec-results sec-shuttle" aria-label="ลูกแบด">
+        <h2>ลูกแบดที่ใช้</h2>
+        <div class="sh-sum"><span id="sh-total" class="note"></span>
+          <label for="sh-price">ราคาลูกละ (บาท)<input type="number" inputmode="decimal" min="0" step="0.5" id="sh-price" placeholder="เช่น 25"></label></div>
+        <div class="scroll-x"><table id="sh-table"></table></div>
+        <p class="note" id="sh-note" style="margin-top:8px"></p>
       </section>
 
       <section class="panel sec-stats" aria-label="สถิติการจับคู่">
@@ -335,9 +373,46 @@ function buildQueue(state, exclude) {
   return { queue: q, stats: stats, lastP: lastPartners(games) };
 }
 
+function sameTeam(cur, ids) {
+  return ids.length === 2 && [cur.a, cur.b].some(function (t) { return t.indexOf(ids[0]) >= 0 && t.indexOf(ids[1]) >= 0; });
+}
+
+// คิวคู่ที่ล็อกไว้: คู่เดิมที่ยังรออยู่ครบยังคงเดิม คนที่เหลือจับคู่ต่อท้าย (เลือกคู่ที่เคยเป็นคู่หูกันน้อยสุด)
+function syncPairs(state, exclude) {
+  var b = buildQueue(state, exclude);
+  var waiting = {}; b.queue.forEach(function (x) { waiting[x.id] = x; });
+  var kept = [], used = {};
+  (state.qpairs || []).forEach(function (pr) {
+    if (waiting[pr[0]] && waiting[pr[1]] && !used[pr[0]] && !used[pr[1]]) { kept.push([pr[0], pr[1]]); used[pr[0]] = used[pr[1]] = 1; }
+  });
+  var rest = b.queue.filter(function (x) { return !used[x.id]; });
+  var made = [];
+  while (rest.length >= 2) {
+    var first = rest.shift(), best = 0, bestCost = Infinity;
+    for (var k = 0; k < Math.min(4, rest.length); k++) {
+      var o = rest[k];
+      var cnt = (b.stats.partner[first.id] && b.stats.partner[first.id][o.id]) || 0;
+      var cost = 100 * cnt * cnt + (b.lastP[first.id] === o.id ? 300 : 0) + k * 15;
+      if (cost < bestCost) { bestCost = cost; best = k; }
+    }
+    made.push([first.id, rest.splice(best, 1)[0].id]);
+  }
+  state.qpairs = kept.concat(made);
+  return { pairs: state.qpairs, single: rest.length ? rest[0].id : null };
+}
+
 function fillCourt(state, i, rng) {
   var c = state.courts[i];
   if (!c || c.cur) return false;
+  if (state.lock) {
+    var sp = syncPairs(state);
+    if (sp.pairs.length < 2) return false;
+    var A = sp.pairs[0], B = sp.pairs[1];
+    state.qpairs = sp.pairs.slice(2);
+    var st0 = {}; A.concat(B).forEach(function (id) { st0[id] = 1; });
+    c.cur = { a: A.slice(), b: B.slice(), st: st0 }; c.no++;
+    return true;
+  }
   var b = buildQueue(state);
   var r = bestFill([], b.queue, 4, b.stats, b.lastP, false, rng);
   if (!r) return false;
@@ -349,10 +424,14 @@ function fillCourt(state, i, rng) {
 function isFresh(cur) { return cur.a.concat(cur.b).every(function (id) { return cur.st[id] === 1; }); }
 
 // winner: 'a' | 'b' ต้องระบุเมื่อทั้ง 4 คนเพิ่งลงมาด้วยกัน (เกมแรกของกลุ่ม)
-function finishGame(state, i, winner, rng) {
+function finishGame(state, i, winner, rng, scores) {
   var c = state.courts[i];
   if (!c || !c.cur) return { error: 'nogame' };
   var cur = c.cur, ids = cur.a.concat(cur.b), fresh = isFresh(cur);
+  // ผู้ชนะจากคะแนน (ถ้ามี) ใช้แทนการเลือกทีมด้วยมือ
+  var sw = null;
+  if (scores && typeof scores.a === 'number' && typeof scores.b === 'number' && scores.a !== scores.b) sw = scores.a > scores.b ? 'a' : 'b';
+  if (fresh && sw) winner = sw;
   if (fresh && winner !== 'a' && winner !== 'b') return { error: 'winner' };
   var leavers, stayers;
   if (fresh) {
@@ -366,12 +445,28 @@ function finishGame(state, i, winner, rng) {
   stayers = stayers.filter(function (id) { if (activeMap[id]) return true; leavers.push(id); return false; });
   if (c.closing) { leavers = leavers.concat(stayers); stayers = []; }
 
-  state.log.push({ court: i + 1, no: c.no, a: cur.a.slice(), b: cur.b.slice(), winner: fresh ? winner : null });
+  state.log.push({ court: i + 1, no: c.no, a: cur.a.slice(), b: cur.b.slice(), winner: fresh ? winner : sw, sa: sw ? scores.a : null, sb: sw ? scores.b : null });
   var oldSt = cur.st;
   c.cur = null;
   leavers.forEach(function (id) { state.seq++; state.leftAt[id] = state.seq; });
   var res = { ok: true, leavers: leavers, incoming: [], idle: false, closed: false };
   if (c.closing) { res.closed = true; return res; }
+
+  if (state.lock && sameTeam(cur, stayers)) {
+    // โหมดล็อกคู่: คู่ที่อยู่ต่อเจอคู่หน้าสุดในคิว (ซึ่งประกาศไว้แล้ว)
+    var sp = syncPairs(state, stayers.concat(leavers));
+    if (!sp.pairs.length && !state.courts.some(function (cc, j) { return j !== i && cc.cur; })) sp = syncPairs(state, stayers);
+    if (sp.pairs.length) {
+      var inc = sp.pairs[0]; state.qpairs = sp.pairs.slice(1);
+      var st2 = {};
+      stayers.forEach(function (id) { st2[id] = (oldSt[id] || 1) + 1; });
+      inc.forEach(function (id) { st2[id] = 1; res.incoming.push(id); });
+      c.cur = { a: stayers.slice(), b: inc.slice(), st: st2 }; c.no++;
+      return res;
+    }
+    stayers.forEach(function (id) { state.seq++; state.leftAt[id] = state.seq; });
+    res.idle = true; return res;
+  }
 
   var m = 4 - stayers.length;
   // คนที่เพิ่งออกจากคอร์ทนี้ ห้ามกลับเข้าคอร์ทเดิมทันที (ต้องให้คอร์ทอื่นจบแล้วสลับกันก่อน)
@@ -418,7 +513,7 @@ function settle(state, exceptIndex) {
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   function blank() {
-    return { players: [], nextId: 1, courts: [newCourt(), newCourt()], log: [], leftAt: {}, seq: 0, keep: false, sample: false };
+    return { players: [], nextId: 1, courts: [newCourt(), newCourt()], log: [], leftAt: {}, seq: 0, keep: false, sample: false, drafts: {}, lock: false, qpairs: [], shPrice: '' };
   }
   function newCourt() { return { cur: null, no: 0, closing: false }; }
   function addPlayerTo(st, name) {
@@ -433,7 +528,7 @@ function settle(state, exceptIndex) {
       var raw = localStorage.getItem(STORE);
       if (raw) {
         var s = JSON.parse(raw);
-        if (s && Array.isArray(s.players) && Array.isArray(s.courts) && Array.isArray(s.log)) return s;
+        if (s && Array.isArray(s.players) && Array.isArray(s.courts) && Array.isArray(s.log)) { s.drafts = s.drafts || {}; s.qpairs = s.qpairs || []; return s; }
       }
     } catch (e) {}
     var st = blank();
@@ -466,7 +561,7 @@ function settle(state, exceptIndex) {
   }
   function setStatus(msg, isErr) { var el = $('status'); el.textContent = msg || ''; el.className = 'status' + (isErr ? ' err' : ''); }
   function snap() {
-    undoStack.push(JSON.stringify({ courts: state.courts, log: state.log, leftAt: state.leftAt, seq: state.seq }));
+    undoStack.push(JSON.stringify({ courts: state.courts, log: state.log, leftAt: state.leftAt, seq: state.seq, qpairs: state.qpairs }));
     if (undoStack.length > 40) undoStack.shift();
   }
   function disarm() {
@@ -508,15 +603,22 @@ function settle(state, exceptIndex) {
     disarm();
     snap();
     if (!fillCourt(state, i)) { undoStack.pop(); setStatus('ยังมีคนรอไม่ครบ 4 คน', true); return; }
+    if (state.drafts) delete state.drafts[i];
     save(); render(); setStatus('เริ่มเกมคอร์ท ' + (i + 1) + ' แล้ว');
   }
 
   function finish(i, winner) {
     disarm();
+    var sc = readScores(i);
+    if (sc && sc.error) { setStatus(sc.error, true); return; }
     snap();
-    var res = finishGame(state, i, winner);
-    if (res.error) { undoStack.pop(); setStatus(res.error === 'winner' ? 'เลือกทีมที่ชนะก่อน' : 'คอร์ทนี้ไม่มีเกม', true); return; }
+    var sh = shVal(i);
+    var res = finishGame(state, i, winner, null, sc);
+    if (res.error) { undoStack.pop(); setStatus(res.error === 'winner' ? 'ใส่คะแนนทั้งสองทีม หรือเลือกทีมที่ชนะก่อน' : 'คอร์ทนี้ไม่มีเกม', true); return; }
+    if (state.log.length) state.log[state.log.length - 1].sh = sh;
     var n = i + 1;
+    state.drafts = state.drafts || {};
+    if (res.closed) state.drafts = {}; else delete state.drafts[i];
     if (res.closed) state.courts.splice(i, 1);
     var filled = settle(state, res.closed ? -1 : i);
     save(); render();
@@ -532,7 +634,7 @@ function settle(state, exceptIndex) {
     disarm();
     if (!undoStack.length) { setStatus('ไม่มีอะไรให้ย้อนกลับ', true); return; }
     var s = JSON.parse(undoStack.pop());
-    state.courts = s.courts; state.log = s.log; state.leftAt = s.leftAt; state.seq = s.seq;
+    state.courts = s.courts; state.log = s.log; state.leftAt = s.leftAt; state.seq = s.seq; state.qpairs = s.qpairs || []; state.drafts = {};
     save(); render(); setStatus('ย้อนกลับแล้ว');
   }
 
@@ -543,7 +645,7 @@ function settle(state, exceptIndex) {
       return;
     }
     disarm();
-    state.log = []; undoStack = []; state.leftAt = {}; state.seq = 0;
+    state.log = []; undoStack = []; state.drafts = {}; state.leftAt = {}; state.seq = 0;
     state.courts = state.courts.filter(function (c) { return !c.closing; }).map(function () { return newCourt(); });
     if (!state.courts.length) state.courts = [newCourt()];
     state.players.forEach(function (p, i) { p.offset = 0; state.seq++; state.leftAt[p.id] = state.seq; });
@@ -565,7 +667,7 @@ function settle(state, exceptIndex) {
     }
     disarmNames();
     var n = state.players.length;
-    state.players = []; state.log = []; state.sample = false; state.nextId = 1; state.leftAt = {}; state.seq = 0; undoStack = [];
+    state.players = []; state.log = []; state.sample = false; state.nextId = 1; state.leftAt = {}; state.seq = 0; undoStack = []; state.drafts = {};
     state.courts = state.courts.filter(function (c) { return !c.closing; }).map(function () { return newCourt(); });
     if (!state.courts.length) state.courts = [newCourt()];
     save(); render();
@@ -598,6 +700,9 @@ function settle(state, exceptIndex) {
     $('courts-note').textContent = closing ? ('คอร์ทที่ ' + state.courts.length + ' จะปิดหลังจบเกม')
       : (spare < 0 ? 'ผู้เล่นยังไม่พอเต็มทุกคอร์ท' : (spare === 0 ? 'ไม่มีคนสำรอง คอร์ทที่จบก่อนต้องรอสลับคนกับคอร์ทอื่น' : 'คนสำรอง ' + spare + ' คน'));
     $('opt-keep').checked = !!state.keep;
+    $('opt-keep').disabled = !!state.lock;
+    $('opt-lock').checked = !!state.lock;
+    $('sh-price').value = state.shPrice || '';
   }
 
   function renderPlayers() {
@@ -626,6 +731,65 @@ function settle(state, exceptIndex) {
     return '<span class="pl">' + esc(nameOf(id)) + ((leaving || gone || c.closing) ? '<span class="tag">ออกหลังเกมนี้</span>' : '') + '</span>';
   }
 
+  function draftVal(i, side) { var d = (state.drafts || {})[i]; return d && d[side] != null ? d[side] : ''; }
+  function readScores(i) {
+    var d = (state.drafts || {})[i] || {};
+    var ea = d.a == null || String(d.a).trim() === '', eb = d.b == null || String(d.b).trim() === '';
+    if (ea && eb) return null;
+    if (ea || eb) return { error: 'ใส่คะแนนให้ครบทั้งสองทีม หรือเว้นว่างทั้งคู่' };
+    var a = Number(d.a), b = Number(d.b);
+    if (!(a >= 0 && b >= 0) || a % 1 !== 0 || b % 1 !== 0 || a > 99 || b > 99) return { error: 'คะแนนต้องเป็นจำนวนเต็ม 0 ถึง 99' };
+    if (a === b) return { error: 'คะแนนเท่ากัน ตรวจคะแนนอีกครั้ง' };
+    return { a: a, b: b };
+  }
+  function ctlHtml(i) {
+    var g = state.courts[i].cur, sc = readScores(i), ok = sc && !sc.error;
+    if (isFresh(g)) {
+      if (ok) {
+        var w = sc.a > sc.b ? g.a : g.b;
+        return '<div class="court-ctl"><span class="note">เกมแรกของกลุ่ม ทีมแพ้ออก ระบบดูผู้ชนะจากคะแนน</span><div class="row">' +
+          '<button type="button" class="btn btn-primary" data-act="done" data-court="' + i + '">บันทึกผล · ' + esc(teamName(w)) + ' ชนะ ' + Math.max(sc.a, sc.b) + '–' + Math.min(sc.a, sc.b) + '</button></div></div>';
+      }
+      return '<div class="court-ctl"><span class="note">เกมแรกของกลุ่ม ทีมแพ้ออก ใส่คะแนนทั้งสองทีมด้านบน หรือกดทีมที่ชนะ</span><div class="row">' +
+        '<button type="button" class="btn btn-primary" data-act="win" data-court="' + i + '" data-side="a">' + esc(teamName(g.a)) + ' ชนะ</button>' +
+        '<button type="button" class="btn btn-primary" data-act="win" data-court="' + i + '" data-side="b">' + esc(teamName(g.b)) + ' ชนะ</button></div></div>';
+    }
+    var out = g.a.concat(g.b).filter(function (id) { return g.st[id] >= MAX_STREAK; });
+    return '<div class="court-ctl"><span class="note">ลงครบ ' + MAX_STREAK + ' เกมแล้วออก: ' + esc(names(out)) + '</span>' +
+      '<div class="row"><button type="button" class="btn btn-primary" data-act="done" data-court="' + i + '">' + (ok ? 'บันทึกผลและจบเกม' : 'จบเกม') + '</button></div></div>';
+  }
+
+  var editing = -1;
+  function editHtml(i) {
+    var g = state.courts[i].cur, on = onCourtIds(state);
+    var cands = state.players.filter(function (p) { return !on[p.id]; });
+    var h = '<div class="edit-panel"><span class="note">เลือกคนใหม่แทนผู้เล่นในคอร์ท คนที่ถูกแทนจะไปต่อท้ายคิวรอ ส่วนคนที่เข้ามานับเป็นเกมแรกของเขาในคอร์ทนี้</span>';
+    g.a.concat(g.b).forEach(function (id) {
+      h += '<div class="erow"><span>' + esc(nameOf(id)) + '</span><select data-act="swap" data-court="' + i + '" data-old="' + id + '" aria-label="เปลี่ยน ' + esc(nameOf(id)) + '">' +
+        '<option value="">ไม่เปลี่ยน</option>' + cands.map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + (p.active ? '' : ' (ไม่อยู่)') + '</option>'; }).join('') + '</select></div>';
+    });
+    return h + '</div>';
+  }
+  function swapPlayer(i, oldId, newId) {
+    var c = state.courts[i], g = c && c.cur;
+    if (!g || !state.players.some(function (p) { return p.id === newId; })) return;
+    if (onCourtIds(state)[newId]) { setStatus('คนนี้อยู่ในคอร์ทแล้ว', true); return; }
+    snap();
+    [g.a, g.b].forEach(function (t) { var k = t.indexOf(oldId); if (k >= 0) t[k] = newId; });
+    delete g.st[oldId]; g.st[newId] = 1;
+    state.players.forEach(function (p) { if (p.id === newId) p.active = true; });
+    state.seq++; state.leftAt[oldId] = state.seq;
+    save(); render();
+    setStatus('คอร์ท ' + (i + 1) + ': ' + nameOf(newId) + ' เข้าแทน ' + nameOf(oldId) + ' (' + nameOf(oldId) + ' ไปต่อท้ายคิว)');
+  }
+
+  function shVal(i) { var d = (state.drafts || {})[i]; return d && d.sh != null ? d.sh : 1; }
+  function shuttleRow(i) {
+    return '<div class="sh-row"><span>ลูกแบดที่ใช้ในเกมนี้</span><div class="sh-step">' +
+      '<button type="button" class="btn" data-act="shdec" data-court="' + i + '" aria-label="ลดจำนวนลูก คอร์ท ' + (i + 1) + '">−</button>' +
+      '<output>' + shVal(i) + '</output>' +
+      '<button type="button" class="btn" data-act="shinc" data-court="' + i + '" aria-label="เพิ่มจำนวนลูก คอร์ท ' + (i + 1) + '">+</button></div></div>';
+  }
   function courtCard(c, i, statsLog, q) {
     var n = i + 1, head = '<div class="court-head"><h3>คอร์ท ' + n + (c.cur ? ' · เกมที่ ' + c.no : '') + '</h3>' +
       (c.closing ? '<span class="flag">ปิดหลังจบเกมนี้</span>' : '');
@@ -643,21 +807,17 @@ function settle(state, exceptIndex) {
     });
     if (reps.length) head += '<span class="flag">คู่ซ้ำ ' + reps.join(', ') + '</span>';
     head += '</div>';
-    var fresh = isFresh(g);
-    var ctl;
-    if (fresh) {
-      ctl = '<div class="court-ctl"><span class="note">เกมแรกของกลุ่ม ทีมแพ้ออก กดทีมที่ชนะเมื่อจบเกม</span><div class="row">' +
-        '<button type="button" class="btn btn-primary" data-act="win" data-court="' + i + '" data-side="a">' + esc(teamName(g.a)) + ' ชนะ</button>' +
-        '<button type="button" class="btn btn-primary" data-act="win" data-court="' + i + '" data-side="b">' + esc(teamName(g.b)) + ' ชนะ</button></div></div>';
-    } else {
-      var out = g.a.concat(g.b).filter(function (id) { return g.st[id] >= MAX_STREAK; });
-      ctl = '<div class="court-ctl"><span class="note">ลงครบ ' + MAX_STREAK + ' เกมแล้วออก: ' + esc(names(out)) + '</span>' +
-        '<div class="row"><button type="button" class="btn btn-primary" data-act="done" data-court="' + i + '">จบเกม</button></div></div>';
+    function scoreInput(side, label) {
+      return '<label>' + label + '<input class="score-in" type="number" inputmode="numeric" min="0" max="99" data-court="' + i + '" data-side="' + side + '" value="' + esc(draftVal(i, side)) + '" aria-label="' + label + ' คอร์ท ' + n + '"></label>';
     }
+    var scoreRow = '<div class="score-row">' + scoreInput('a', 'คะแนนทีมซ้าย') + scoreInput('b', 'คะแนนทีมขวา') + '</div>';
     return '<article class="court-wrap">' + head +
       '<div class="court" role="group" aria-label="คอร์ท ' + n + ': ' + esc(teamName(g.a)) + ' พบ ' + esc(teamName(g.b)) + '">' +
       '<div class="half a">' + plCell(c, g.a[0]) + plCell(c, g.a[1]) + '</div><div class="net" aria-hidden="true"></div>' +
-      '<div class="half b">' + plCell(c, g.b[0]) + plCell(c, g.b[1]) + '</div></div>' + ctl + '</article>';
+      '<div class="half b">' + plCell(c, g.b[0]) + plCell(c, g.b[1]) + '</div></div>' + scoreRow + shuttleRow(i) +
+      '<div id="ctl-' + i + '">' + ctlHtml(i) + '</div>' +
+      '<button type="button" class="btn edit-link" data-act="edit" data-court="' + i + '">' + (editing === i ? 'ปิดการแก้ไขผู้เล่น' : 'แก้ไขผู้เล่นในคอร์ท') + '</button>' +
+      (editing === i ? editHtml(i) : '') + '</article>';
   }
 
   function renderRound() {
@@ -665,10 +825,33 @@ function settle(state, exceptIndex) {
     if (!activePlayers().length) { el.innerHTML = '<div class="empty">เพิ่มรายชื่อผู้เล่นอย่างน้อย 4 คน เกมจะเริ่มให้อัตโนมัติ</div>'; return; }
     var b = buildQueue(state), statsLog = computeStats(allIds(), state.log);
     var html = '<h2>คอร์ท</h2><div class="courts">' + state.courts.map(function (c, i) { return courtCard(c, i, statsLog, b.queue); }).join('') + '</div>';
-    html += '<div class="queue"><strong>คิวรอลงสนาม</strong>' + (b.queue.length
-      ? b.queue.map(function (x, k) { return '<span class="chip' + (k < 2 ? ' next' : '') + '"><b>' + (k + 1) + '</b>' + esc(nameOf(x.id)) + '</span>'; }).join('')
-      : '<span class="note">ไม่มีคนรอ</span>') + '</div>';
+    if (lockInfo) {
+      html += '<div class="queue"><strong>คิวรอลงสนาม · คู่ที่ล็อกแล้ว</strong>' + (lockInfo.pairs.length
+        ? lockInfo.pairs.map(function (pr, k) { return '<span class="chip' + (k === 0 ? ' next' : '') + '"><b>' + (k + 1) + '</b>' + esc(nameOf(pr[0])) + ' + ' + esc(nameOf(pr[1])) + '</span>'; }).join('')
+        : '<span class="note">ยังไม่มีคู่ในคิว</span>') + '</div>';
+      html += '<p class="note" style="margin-top:8px">' + (lockInfo.pairs.length ? 'คู่ที่ 1 จะลงคอร์ทที่จบก่อน และเจอกับคู่ที่อยู่ต่อ คู่ในคิวไม่เปลี่ยนจนกว่าจะได้ลง' : '') +
+        (lockInfo.single != null ? (lockInfo.pairs.length ? ' · ' : '') + 'รอจับคู่: ' + esc(nameOf(lockInfo.single)) + ' (รอคนถัดไปมาเป็นคู่)' : '') + '</p>';
+    } else {
+      html += '<div class="queue"><strong>คิวรอลงสนาม</strong>' + (b.queue.length
+        ? b.queue.map(function (x, k) { return '<span class="chip' + (k < 2 ? ' next' : '') + '"><b>' + (k + 1) + '</b>' + esc(nameOf(x.id)) + '</span>'; }).join('')
+        : '<span class="note">ไม่มีคนรอ</span>') + '</div>';
+    }
     el.innerHTML = html;
+  }
+
+  function renderShuttles() {
+    var price = parseFloat(state.shPrice), hasP = price > 0;
+    var tot = 0, rec = 0, per = {};
+    state.log.forEach(function (g) {
+      if (g.sh == null) return;
+      rec++; tot += g.sh;
+      g.a.concat(g.b).forEach(function (id) { per[id] = per[id] || { g: 0, sh: 0 }; per[id].g++; per[id].sh += g.sh / 4; });
+    });
+    $('sh-total').textContent = rec ? 'ใช้ไปทั้งหมด ' + tot + ' ลูก จาก ' + rec + ' เกม (เฉลี่ย ' + (tot / rec).toFixed(1).replace(/\.0$/, '') + ' ลูก/เกม)' + (hasP ? ' · รวม ' + (tot * price).toFixed(2).replace(/\.00$/, '') + ' บาท' : '') : 'ยังไม่มีเกมที่บันทึกจำนวนลูก';
+    var ids = Object.keys(per).sort(function (x, y) { return per[y].sh - per[x].sh || (nameOf(Number(x)) > nameOf(Number(y)) ? 1 : -1); });
+    $('sh-table').innerHTML = ids.length ? '<thead><tr><th>ผู้เล่น</th><th>เล่น</th><th>ลูกที่หารตามเกม</th>' + (hasP ? '<th>ค่าลูก (บาท)</th>' : '') + '</tr></thead><tbody>' +
+      ids.map(function (id) { var r = per[id]; return '<tr><td>' + esc(nameOf(Number(id))) + '</td><td>' + r.g + '</td><td>' + (Math.round(r.sh * 100) / 100) + '</td>' + (hasP ? '<td>' + (r.sh * price).toFixed(2).replace(/\.00$/, '') + '</td>' : '') + '</tr>'; }).join('') + '</tbody>' : '';
+    $('sh-note').textContent = rec ? 'แต่ละเกมหารค่าลูกเท่ากันทั้ง 4 คนที่ลงเล่นเกมนั้น ปรับจำนวนลูกใต้คอร์ทก่อนกดจบเกม (ค่าเริ่มต้น 1 ลูก)' : 'ปรับจำนวนลูกใต้คอร์ทก่อนกดจบเกม ระบบจะสรุปลูกที่ใช้และค่าลูกต่อคนที่นี่';
   }
 
   function renderHistory() {
@@ -678,9 +861,49 @@ function settle(state, exceptIndex) {
     for (var i = state.log.length - 1; i >= 0 && rows.length < 60; i--) {
       var g = state.log[i];
       rows.push('<li><span>' + esc(teamName(g.a)) + ' พบ ' + esc(teamName(g.b)) + '</span><span class="who">คอร์ท ' + g.court + ' · เกมที่ ' + g.no +
-        (g.winner ? ' · ชนะ ' + esc(teamName(g.winner === 'a' ? g.a : g.b)) : '') + '</span></li>');
+        (g.winner ? ' · ชนะ ' + esc(teamName(g.winner === 'a' ? g.a : g.b)) : '') + (g.sa != null ? ' · คะแนน ' + g.sa + '–' + g.sb : '') + (g.sh != null ? ' · ลูก ' + g.sh : '') + '</span></li>');
     }
     h.innerHTML = '<ul class="hlist">' + rows.join('') + '</ul>';
+  }
+
+  var resMode = 'player';
+  function renderResults() {
+    var tbl = $('result-table'), note = $('result-note');
+    var rec = {}, known = 0;
+    function get(k) { return rec[k] || (rec[k] = { g: 0, w: 0, l: 0, pf: 0, pa: 0, sg: 0 }); }
+    state.log.forEach(function (g) {
+      var scored = g.sa != null && g.sb != null;
+      [['a', g.a, g.sa, g.sb], ['b', g.b, g.sb, g.sa]].forEach(function (t) {
+        var keys = resMode === 'player' ? t[1].slice() : [Math.min(t[1][0], t[1][1]) + '-' + Math.max(t[1][0], t[1][1])];
+        keys.forEach(function (k) {
+          var r = get(k); r.g++;
+          if (g.winner) { if (g.winner === t[0]) r.w++; else r.l++; }
+          if (scored) { r.pf += t[2]; r.pa += t[3]; r.sg++; }
+        });
+      });
+      if (g.winner) known++;
+    });
+    var rows = Object.keys(rec).map(function (k) {
+      var r = rec[k], dec = r.w + r.l;
+      var label = resMode === 'player' ? nameOf(Number(k)) : k.split('-').map(function (x) { return nameOf(Number(x)); }).join(' + ');
+      return { label: label, r: r, rate: dec ? r.w / dec : -1, diff: r.pf - r.pa };
+    });
+    rows.sort(function (x, y) { return y.r.w - x.r.w || y.rate - x.rate || y.diff - x.diff || y.r.g - x.r.g; });
+    if (!rows.length) {
+      tbl.innerHTML = '';
+      note.textContent = 'ยังไม่มีเกมที่จบ สถิติจะขึ้นเมื่อมีเกมจบและบันทึกผล';
+      return;
+    }
+    tbl.innerHTML = '<thead><tr><th>' + (resMode === 'player' ? 'ผู้เล่น' : 'คู่') + '</th><th>เล่น</th><th>ชนะ</th><th>แพ้</th><th>% ชนะ</th><th>แต้มได้</th><th>แต้มเสีย</th><th>ต่าง</th></tr></thead><tbody>' +
+      rows.map(function (x, k) {
+        var r = x.r, dec = r.w + r.l;
+        return '<tr><td>' + (k + 1) + '. ' + esc(x.label) + '</td><td>' + r.g + '</td><td class="res-win">' + r.w + '</td><td>' + r.l + '</td><td>' +
+          (dec ? Math.round(100 * r.w / dec) + '%' : '–') + '</td><td>' + (r.sg ? r.pf : '–') + '</td><td>' + (r.sg ? r.pa : '–') + '</td><td>' +
+          (r.sg ? (x.diff > 0 ? '+' : '') + x.diff : '–') + '</td></tr>';
+      }).join('') + '</tbody>';
+    note.textContent = known
+      ? 'มีผลแพ้ชนะ ' + known + ' จาก ' + state.log.length + ' เกม นับเฉพาะเกมที่ใส่คะแนน และเกมแรกของกลุ่มที่เลือกทีมชนะ เกมที่ไม่มีผลนับในช่อง "เล่น" เท่านั้น'
+      : 'ยังไม่มีผลแพ้ชนะ ใส่คะแนนใต้คอร์ทตอนจบเกม แล้วสถิติจะขึ้นที่นี่';
   }
 
   function renderStats() {
@@ -691,10 +914,14 @@ function settle(state, exceptIndex) {
     b.queue.forEach(function (x, k) { qpos[x.id] = k + 1; });
     var onCourt = {};
     state.courts.forEach(function (c, i) { if (c.cur) c.cur.a.concat(c.cur.b).forEach(function (id) { onCourt[id] = i + 1; }); });
+    var pairAt = {};
+    if (lockInfo) lockInfo.pairs.forEach(function (pr, k) { pairAt[pr[0]] = { k: k + 1, mate: nameOf(pr[1]) }; pairAt[pr[1]] = { k: k + 1, mate: nameOf(pr[0]) }; });
     var rows = ps.map(function (p, i) {
       var m = stats.partner[p.id] || {}, distinct = Object.keys(m).length, rep = 0;
       Object.keys(m).forEach(function (k) { if (m[k] > 1) rep += m[k] - 1; });
       var status = onCourt[p.id] ? 'คอร์ท ' + onCourt[p.id] : (qpos[p.id] ? 'คิวที่ ' + qpos[p.id] : 'ไม่อยู่');
+      if (lockInfo && !onCourt[p.id] && pairAt[p.id]) status = 'คิวคู่ที่ ' + pairAt[p.id].k + ' กับ ' + pairAt[p.id].mate;
+      else if (lockInfo && lockInfo.single === p.id) status = 'รอจับคู่';
       return '<tr><td>' + (i + 1) + ' ' + esc(p.name) + '</td><td>' + status + '</td><td>' + (stats.played[p.id] || 0) + '</td><td>' + distinct + ' / ' + (ps.length - 1) + '</td><td>' + rep + '</td></tr>';
     }).join('');
     $('stat-table').innerHTML = '<thead><tr><th>ผู้เล่น</th><th>ตอนนี้</th><th>เล่น (เกม)</th><th>เคยเป็นคู่หูกับ (คน)</th><th>คู่ซ้ำ (ครั้ง)</th></tr></thead><tbody>' + rows + '</tbody>';
@@ -711,12 +938,22 @@ function settle(state, exceptIndex) {
     $('matrix').innerHTML = head + body;
   }
 
-  function render() { renderCourtsControl(); renderPlayers(); renderRound(); renderHistory(); renderStats(); }
+  var lockInfo = null;
+  function render() {
+    lockInfo = state.lock ? syncPairs(state) : null;
+    if (lockInfo) save();
+    renderCourtsControl(); renderPlayers(); renderRound(); renderHistory(); renderResults(); renderShuttles(); renderStats();
+  }
 
   /* ---------- เหตุการณ์ ---------- */
   $('courts-dec').addEventListener('click', courtsDec);
   $('courts-inc').addEventListener('click', courtsInc);
   $('btn-undo').addEventListener('click', undo);
+  $('opt-lock').addEventListener('change', function (e) {
+    state.lock = e.target.checked; state.qpairs = [];
+    save(); render();
+    setStatus(state.lock ? 'ล็อกคู่ในคิวแล้ว ดูคู่ที่รออยู่ที่ "คิวรอลงสนาม" เกมที่กำลังเล่นอยู่ยังเหมือนเดิม' : 'ปิดการล็อกคู่ในคิวแล้ว');
+  });
   $('btn-clear-names').addEventListener('click', clearNames);
   $('btn-reset').addEventListener('click', resetAll);
   $('opt-keep').addEventListener('change', function (e) { state.keep = e.target.checked; save(); setStatus(state.keep ? 'ผู้ชนะที่อยู่ต่อจะเป็นคู่หูเดิม (มีผลกับเกมถัดไป)' : 'โปรแกรมจะแบ่งทีมใหม่เพื่อไม่ให้คู่ซ้ำ'); });
@@ -724,11 +961,27 @@ function settle(state, exceptIndex) {
   $('mx-partner').addEventListener('click', function () { matrixMode = 'partner'; $('mx-partner').setAttribute('aria-pressed', 'true'); $('mx-opp').setAttribute('aria-pressed', 'false'); renderStats(); });
   $('mx-opp').addEventListener('click', function () { matrixMode = 'opp'; $('mx-opp').setAttribute('aria-pressed', 'true'); $('mx-partner').setAttribute('aria-pressed', 'false'); renderStats(); });
 
+  $('rs-player').addEventListener('click', function () { resMode = 'player'; $('rs-player').setAttribute('aria-pressed', 'true'); $('rs-pair').setAttribute('aria-pressed', 'false'); renderResults(); });
+  $('rs-pair').addEventListener('click', function () { resMode = 'pair'; $('rs-pair').setAttribute('aria-pressed', 'true'); $('rs-player').setAttribute('aria-pressed', 'false'); renderResults(); });
+
+  $('sh-price').addEventListener('input', function (e) { state.shPrice = e.target.value; save(); renderShuttles(); });
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains('score-in')) return;
+    var i = Number(t.getAttribute('data-court')), side = t.getAttribute('data-side');
+    state.drafts = state.drafts || {};
+    state.drafts[i] = state.drafts[i] || {};
+    state.drafts[i][side] = t.value;
+    save();
+    var box = $('ctl-' + i);
+    if (box && state.courts[i] && state.courts[i].cur) box.innerHTML = ctlHtml(i);
+  });
+
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act], #btn-clear-sample');
     if (!t) return;
     if (t.id === 'btn-clear-sample') {
-      state.players = []; state.log = []; state.sample = false; state.nextId = 1; state.leftAt = {}; state.seq = 0; undoStack = [];
+      state.players = []; state.log = []; state.sample = false; state.nextId = 1; state.leftAt = {}; state.seq = 0; undoStack = []; state.drafts = {};
       state.courts = state.courts.filter(function (c) { return !c.closing; }).map(function () { return newCourt(); });
       save(); render(); setStatus('ล้างรายชื่อตัวอย่างแล้ว เพิ่มชื่อผู้เล่นจริงตามลำดับที่มาถึงได้เลย');
       return;
@@ -738,6 +991,12 @@ function settle(state, exceptIndex) {
     if (act === 'win') finish(court, t.getAttribute('data-side'));
     else if (act === 'done') finish(court);
     else if (act === 'start') startCourt(court);
+    else if (act === 'shinc' || act === 'shdec') {
+      state.drafts = state.drafts || {}; state.drafts[court] = state.drafts[court] || {};
+      state.drafts[court].sh = Math.max(0, Math.min(20, shVal(court) + (act === 'shinc' ? 1 : -1)));
+      save(); render();
+    }
+    else if (act === 'edit') { editing = editing === court ? -1 : court; render(); }
     else if (act === 'remove') {
       var id = Number(t.getAttribute('data-id'));
       state.players = state.players.filter(function (p) { return p.id !== id; });
@@ -748,6 +1007,10 @@ function settle(state, exceptIndex) {
 
   document.addEventListener('change', function (e) {
     var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-act') === 'swap') {
+      if (t.value) swapPlayer(Number(t.getAttribute('data-court')), Number(t.getAttribute('data-old')), Number(t.value));
+      return;
+    }
     if (!t || !t.getAttribute || t.getAttribute('data-act') !== 'toggle') return;
     var id = Number(t.getAttribute('data-id'));
     var p = state.players.filter(function (q) { return q.id === id; })[0];
