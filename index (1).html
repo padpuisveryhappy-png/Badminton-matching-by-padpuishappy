@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="จัดคู่ตีแบด">
+<meta name="description" content="จัดคู่และคิวตีแบดมินตัน สลับคู่ไม่ซ้ำ ทุกคนได้เล่นเท่ากัน">
+<title>จัดคู่ตีแบด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600&family=Sarabun:wght@400;500;700&display=swap">
+<style>
+/* Layout: คอลัมน์หลัก (ตั้งค่า, คอร์ทพร้อมคิวรอ, ประวัติ, สถิติ) คู่กับคอลัมน์รายชื่อผู้เล่นฝั่งซ้ายบนจอกว้าง; จอแคบเรียงเป็นแถวเดียว */
+:root {
+  --bg: #f1f6f3;
+  --surface: #ffffff;
+  --ink: #13241c;
+  --ink-2: #4b5f55;
+  --line: #d2dfd7;
+  --accent: #0b6e4f;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcefe5;
+  --court: #1b6a4f;
+  --court-line: rgba(255, 255, 255, 0.82);
+  --court-ink: #ffffff;
+  --court-pill: rgba(255, 255, 255, 0.16);
+  --warn: #8a4b00;
+  --warn-bg: #fbe9c6;
+  --cell1: #bfe3d0;
+  --cell2: #f3c97a;
+  --cell3: #e8896b;
+  --font-display: "Prompt", "Sarabun", system-ui, sans-serif;
+  --font-body: "Sarabun", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1914; --surface: #15251e; --ink: #e5f0ea; --ink-2: #9db4a8; --line: #27392f;
+    --accent: #4fcb9d; --accent-ink: #06261b; --accent-soft: #1b3a2d;
+    --court: #14503b; --court-line: rgba(255, 255, 255, 0.55); --court-ink: #f1faf5; --court-pill: rgba(255, 255, 255, 0.12);
+    --warn: #f2b960; --warn-bg: #3a2d12;
+    --cell1: #25543f; --cell2: #7a5a1c; --cell3: #8a3f2a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1914; --surface: #15251e; --ink: #e5f0ea; --ink-2: #9db4a8; --line: #27392f;
+  --accent: #4fcb9d; --accent-ink: #06261b; --accent-soft: #1b3a2d;
+  --court: #14503b; --court-line: rgba(255, 255, 255, 0.55); --court-ink: #f1faf5; --court-pill: rgba(255, 255, 255, 0.12);
+  --warn: #f2b960; --warn-bg: #3a2d12;
+  --cell1: #25543f; --cell2: #7a5a1c; --cell3: #8a3f2a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-inline: 16px; padding-block: 20px 40px;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; text-wrap: balance; line-height: 1.3; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.page { max-width: 1060px; margin-inline: auto; display: flex; flex-direction: column; gap: 20px; }
+header.top { display: flex; flex-direction: column; gap: 4px; }
+header.top h1 { font-size: 1.75rem; }
+header.top p { margin: 0; color: var(--ink-2); max-width: 70ch; }
+
+.layout { display: flex; flex-direction: column; gap: 20px; }
+.col { display: contents; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.panel h2 { font-size: 1.1rem; margin-bottom: 12px; }
+.sec-controls { order: 1; } .sec-round { order: 2; } .sec-players { order: 3; } .sec-history { order: 4; } .sec-results { order: 5; } .sec-stats { order: 6; }
+@media (min-width: 880px) {
+  .layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: start; gap: 20px; }
+  .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .col-side { position: sticky; top: 16px; }
+}
+
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; min-height: 44px; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-danger-armed { border-color: var(--warn); background: var(--warn-bg); color: var(--warn); }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.stepper button { border: 0; background: var(--accent-soft); width: 44px; min-height: 44px; font-size: 1.25rem; line-height: 1; }
+.stepper output { min-width: 44px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.field-label { font-weight: 500; }
+.note { color: var(--ink-2); font-size: 0.9rem; margin: 0; }
+.status { min-height: 1.6em; margin: 0; font-size: 0.95rem; }
+.status.err { color: var(--warn); font-weight: 500; }
+.check { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.check input { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--accent); flex: none; }
+.rules { margin: 0; padding: 10px 14px; background: var(--accent-soft); border-radius: 8px; font-size: 0.95rem; }
+
+/* คอร์ท */
+.courts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 18px; }
+.court-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.court-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; align-items: baseline; }
+.court-head h3 { font-size: 1rem; }
+.flag { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 0 8px; font-size: 0.82rem; font-weight: 500; }
+.court {
+  display: grid; grid-template-columns: 1fr 8px 1fr; background: var(--court); color: var(--court-ink);
+  border: 2px solid var(--court-line); border-radius: 4px; min-height: 160px;
+}
+#pv { position: fixed; inset: 0; z-index: 50; overflow: auto; background: var(--bg); color: var(--ink); padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); }
+#pv[hidden] { display: none; }
+.pv-in { max-width: 920px; margin: 0 auto; display: grid; gap: 16px; }
+.pv-top { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.pv-top h2 { margin: 0; }
+.pv-courts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.pv-court { background: var(--court); color: var(--court-ink); border-radius: 14px; padding: 14px; display: grid; gap: 6px; text-align: center; }
+.pv-court h3 { margin: 0; font-size: 0.95rem; font-weight: 500; opacity: 0.85; }
+.pv-court .vs { font-size: 0.8rem; opacity: 0.7; }
+.pv-court .tm { font-size: 1.25rem; font-weight: 700; overflow-wrap: anywhere; }
+.pv-q { display: grid; gap: 8px; }
+.pv-q .qrow { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 1.2rem; font-weight: 700; }
+.pv-q .qrow.first { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.pv-q .qrow b { min-width: 1.6em; font-variant-numeric: tabular-nums; }
+.pv-q .qrow small { font-weight: 400; font-size: 0.85rem; margin-left: auto; opacity: 0.85; }
+.pv-me { background: var(--accent-soft); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; }
+.pv-me select { min-height: 44px; font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 0 8px; }
+.pv-me .ans { font-size: 1.15rem; font-weight: 700; }
+.sh-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.sh-step { display: flex; align-items: center; gap: 6px; }
+.sh-step button { min-width: 44px; min-height: 44px; font-size: 1.2rem; }
+.sh-step output { min-width: 2ch; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 1.1rem; }
+.sh-sum { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 8px 0; }
+.sh-sum label { display: flex; align-items: center; gap: 8px; }
+.sh-sum input { width: 6.5em; min-height: 40px; font: inherit; border-radius: 8px; border: 1px solid var(--court-line); background: var(--surface); color: var(--ink); padding: 0 8px; }
+.edit-panel { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); display: grid; gap: 8px; }
+.edit-panel .erow { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; align-items: center; }
+.edit-panel select { min-height: 40px; font: inherit; border-radius: 8px; border: 1px solid var(--court-line); background: var(--surface); color: var(--ink); padding: 0 8px; min-width: 0; }
+.edit-link { margin-top: 8px; }
+.half { position: relative; display: grid; grid-template-rows: 1fr 1fr; min-width: 0; }
+.half .pl { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 8px; text-align: center; font-weight: 700; font-size: 1.05rem; overflow-wrap: anywhere; position: relative; z-index: 1; }
+.half .pl + .pl { border-top: 2px solid var(--court-line); }
+.half::after { content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: var(--court-line); }
+.half.a::after { right: 24%; }
+.half.b::after { left: 24%; }
+.tag { font-size: 0.74rem; font-weight: 500; background: var(--court-pill); border-radius: 999px; padding: 0 8px; line-height: 1.5; }
+.net { background: repeating-linear-gradient(to bottom, var(--court-line) 0 6px, transparent 6px 10px); }
+.court-ctl { display: flex; flex-direction: column; gap: 6px; }
+.court-ctl .row { gap: 8px; }
+.court-ctl .btn { flex: 1 1 140px; }
+.idle { border: 2px dashed var(--line); border-radius: 4px; min-height: 160px; display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; text-align: center; padding: 16px; color: var(--ink-2); }
+.queue { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 18px; }
+.queue strong { font-weight: 500; color: var(--ink-2); }
+.chip { background: var(--accent-soft); border-radius: 999px; padding: 2px 12px; font-size: 0.95rem; }
+.chip b { font-variant-numeric: tabular-nums; margin-right: 6px; color: var(--ink-2); font-weight: 500; }
+.chip.next { background: var(--accent); color: var(--accent-ink); }
+.chip.next b { color: inherit; opacity: 0.8; }
+.empty { border: 2px dashed var(--line); border-radius: 10px; padding: 24px 16px; text-align: center; color: var(--ink-2); }
+
+.score-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.score-row label { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; color: var(--ink-2); min-width: 0; }
+.score-row input { width: 100%; min-height: 46px; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 10px; font-size: 1.2rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; color: var(--ink); }
+.res-win { color: var(--accent); font-weight: 700; }
+
+/* รายชื่อผู้เล่น */
+textarea { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 76px; }
+.plist { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+.plist li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); min-width: 0; }
+.plist li:first-child { border-top: 0; }
+.plist label { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.plist input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+.plist .seq { flex: none; min-width: 1.6em; text-align: right; color: var(--ink-2); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.plist .nm { overflow-wrap: anywhere; font-weight: 500; }
+.plist li.off .nm { color: var(--ink-2); text-decoration: line-through; }
+.plist .meta { color: var(--ink-2); font-size: 0.85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.x { border: 0; background: transparent; color: var(--ink-2); width: 36px; min-height: 36px; border-radius: 6px; font-size: 1.2rem; }
+.x:hover { background: var(--warn-bg); color: var(--warn); }
+.sample { background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.sample .btn { min-height: 36px; padding: 2px 10px; font-size: 0.9rem; }
+
+/* ประวัติ + สถิติ */
+.hlist { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; }
+.hlist li { padding: 6px 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.hlist li:first-child { border-top: 0; }
+.hlist .who { color: var(--ink-2); font-size: 0.85rem; white-space: nowrap; }
+.scroll-x { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 6px 10px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-weight: 500; color: var(--ink-2); }
+.matrix th, .matrix td { padding: 4px 6px; min-width: 34px; }
+.matrix td.c1 { background: var(--cell1); } .matrix td.c2 { background: var(--cell2); } .matrix td.c3 { background: var(--cell3); }
+.matrix td.self { background: var(--line); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+.seg button { border: 0; background: transparent; padding: 6px 14px; min-height: 40px; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+</style>
+<style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="top">
+    <h1>จัดคู่ตีแบด</h1>
+    <p>ใส่ชื่อตามลำดับที่มาถึง โปรแกรมจัดคนลงแต่ละคอร์ทตามคิว คอร์ทไหนจบก่อนก็เติมคอร์ทนั้นก่อน สลับคู่ไม่ให้ซ้ำและให้ทุกคนได้เล่นเท่า ๆ กัน</p>
+  </header>
+
+  <div class="layout">
+    <div class="col col-main">
+      <section class="panel sec-controls" aria-label="ตั้งค่า">
+        <div class="stack">
+          <p class="rules">กติกา: เกมแรกของกลุ่ม ทีมแพ้ออก ทีมชนะอยู่ต่อ เกมถัดไปใครลงครบ 2 เกมติดกันต้องออก ไม่ว่าแพ้หรือชนะ</p>
+          <div class="row">
+            <span class="field-label" id="courts-lbl">จำนวนคอร์ท</span>
+            <div class="stepper" role="group" aria-labelledby="courts-lbl">
+              <button type="button" id="courts-dec" aria-label="ลดจำนวนคอร์ท">−</button>
+              <output id="courts-val" aria-live="polite">2</output>
+              <button type="button" id="courts-inc" aria-label="เพิ่มจำนวนคอร์ท">+</button>
+            </div>
+            <span class="note" id="courts-note"></span>
+          </div>
+          <label class="check" for="opt-keep">
+            <input type="checkbox" id="opt-keep">
+            <span>ผู้ชนะที่อยู่ต่อเป็นคู่หูเดิม <span class="note">(ปกติโปรแกรมแบ่งทีมใหม่เพื่อไม่ให้คู่ซ้ำ ถ้าติ๊กนี้คู่ซ้ำจะเพิ่มขึ้น)</span></span>
+          </label>
+          <label class="check" for="opt-lock">
+            <input type="checkbox" id="opt-lock">
+            <span>ล็อกคู่ในคิว <span class="note">(คนที่รออยู่ถูกจับคู่ล่วงหน้า ทุกคนเห็นว่าถัดไปคู่กับใคร คู่ที่ชนะเกมแรกจะอยู่ต่อเป็นคู่เดิม)</span></span>
+          </label>
+          <div class="row">
+            <button type="button" class="btn" id="btn-undo">ย้อนกลับ</button>
+            <button type="button" class="btn" id="btn-pv">หน้าผู้เล่น (ดูคิว)</button>
+            <button type="button" class="btn" id="btn-reset">เริ่มนับใหม่ (เก็บรายชื่อ)</button>
+          </div>
+          <p class="status" id="status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="panel sec-round" aria-label="คอร์ทและคิวรอ" id="round-panel"></section>
+
+      <section class="panel sec-history" aria-label="เกมที่จบแล้ว">
+        <h2>เกมที่จบแล้ว</h2>
+        <div id="history"></div>
+      </section>
+
+      <section class="panel sec-results" aria-label="สถิติแพ้ชนะ">
+        <h2>สถิติแพ้ชนะ</h2>
+        <div class="seg" role="group" aria-label="เลือกมุมมอง">
+          <button type="button" id="rs-player" aria-pressed="true">รายบุคคล</button>
+          <button type="button" id="rs-pair" aria-pressed="false">รายคู่</button>
+        </div>
+        <div class="scroll-x"><table id="result-table"></table></div>
+        <p class="note" id="result-note" style="margin-top:8px"></p>
+      </section>
+      <section class="panel sec-results sec-shuttle" aria-label="ลูกแบด">
+        <h2>ลูกแบดที่ใช้</h2>
+        <div class="sh-sum"><span id="sh-total" class="note"></span>
+          <label for="sh-price">ราคาลูกละ (บาท)<input type="number" inputmode="decimal" min="0" step="0.5" id="sh-price" placeholder="เช่น 25"></label></div>
+        <div class="scroll-x"><table id="sh-table"></table></div>
+        <p class="note" id="sh-note" style="margin-top:8px"></p>
+      </section>
+
+      <section class="panel sec-stats" aria-label="สถิติการจับคู่">
+        <h2>สถิติการจับคู่</h2>
+        <div class="stack">
+          <div class="scroll-x"><table id="stat-table"></table></div>
+          <div>
+            <div class="seg" role="group" aria-label="เลือกชนิดตาราง">
+              <button type="button" id="mx-partner" aria-pressed="true">เป็นคู่หู</button>
+              <button type="button" id="mx-opp" aria-pressed="false">เป็นคู่แข่ง</button>
+            </div>
+            <div class="scroll-x"><table class="matrix" id="matrix"></table></div>
+            <p class="note" style="margin-top:8px">ตัวเลขคือจำนวนครั้งที่สองคนนี้เคยอยู่ด้วยกันในบทบาทที่เลือก ช่องสีเข้มคือซ้ำหลายครั้ง</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="col col-side">
+      <section class="panel sec-players" aria-label="รายชื่อผู้เล่น">
+        <h2>ผู้เล่น <span class="note" id="pl-count"></span></h2>
+        <div id="sample-note"></div>
+        <label class="field-label" for="new-names">เพิ่มชื่อ (หนึ่งชื่อต่อบรรทัด หรือคั่นด้วยจุลภาค)</label>
+        <textarea id="new-names" rows="3" placeholder="เช่น&#10;ต้น&#10;ฝน, แบงค์"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button type="button" class="btn" id="btn-add">เพิ่มรายชื่อ</button>
+          <button type="button" class="btn" id="btn-clear-names">ล้างรายชื่อทั้งหมด</button>
+        </div>
+        <p class="note" style="margin-top:10px">เลขหน้าชื่อคือลำดับการมาถึง คนมาก่อนได้ลงก่อน คนที่มาทีหลังหรือติ๊กกลับมาใหม่จะไปต่อท้ายคิว ติ๊กออกเมื่อมีคนกลับก่อน ถ้าคนนั้นอยู่บนคอร์ท จะออกเมื่อเกมนั้นจบ</p>
+        <ul class="plist" id="plist"></ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="pv" hidden></div>
+<script>
+// ---- แกนระบบคิวต่อคอร์ท (ไม่ผูกกับหน้าเว็บ ทดสอบด้วย node ได้) ----
+// state = { players:[{id,name,active,offset}], courts:[{cur,no,closing}], log:[{court,no,a,b,winner}],
+//           leftAt:{id:seq}, seq:n, keep:bool }
+// cur = { a:[id,id], b:[id,id], st:{id:จำนวนเกมที่ลงติดกัน} }
+var MAX_STREAK = 2;
+
+function computeStats(ids, games) {
+  var played = {}, partner = {}, opp = {};
+  ids.forEach(function (id) { played[id] = 0; partner[id] = {}; opp[id] = {}; });
+  function bump(m, x, y) {
+    if (!m[x]) m[x] = {}; if (!m[y]) m[y] = {};
+    m[x][y] = (m[x][y] || 0) + 1; m[y][x] = (m[y][x] || 0) + 1;
+  }
+  games.forEach(function (g) {
+    g.a.concat(g.b).forEach(function (id) { played[id] = (played[id] || 0) + 1; });
+    bump(partner, g.a[0], g.a[1]); bump(partner, g.b[0], g.b[1]);
+    g.a.forEach(function (x) { g.b.forEach(function (y) { bump(opp, x, y); }); });
+  });
+  return { played: played, partner: partner, opp: opp };
+}
+
+function lastPartners(games) {
+  var m = {};
+  for (var i = games.length - 1; i >= 0; i--) {
+    [games[i].a, games[i].b].forEach(function (t) {
+      if (m[t[0]] === undefined) m[t[0]] = t[1];
+      if (m[t[1]] === undefined) m[t[1]] = t[0];
+    });
+  }
+  return m;
+}
+
+function gameCost(S, stats, lastP) {
+  var cost = 0;
+  [[S[0], S[1]], [S[2], S[3]]].forEach(function (pr) {
+    var c = (stats.partner[pr[0]] && stats.partner[pr[0]][pr[1]]) || 0;
+    cost += 100 * c * c;
+    if (lastP[pr[0]] === pr[1]) cost += 300; // เพิ่งเป็นคู่กันในเกมล่าสุดของตัวเอง
+  });
+  [[S[0], S[2]], [S[0], S[3]], [S[1], S[2]], [S[1], S[3]]].forEach(function (pr) {
+    var c = (stats.opp[pr[0]] && stats.opp[pr[0]][pr[1]]) || 0;
+    cost += 10 * c * c;
+  });
+  return cost;
+}
+
+function combos(arr, k) {
+  var out = [];
+  (function rec(start, cur) {
+    if (cur.length === k) { out.push(cur.slice()); return; }
+    for (var i = start; i < arr.length; i++) { cur.push(arr[i]); rec(i + 1, cur); cur.pop(); }
+  })(0, []);
+  return out;
+}
+
+// เลือกคน m คนจากหน้าคิวมาลงกับคนที่อยู่ต่อ แล้วแบ่งทีมให้ซ้ำน้อยสุด
+function bestFill(stayers, queue, m, stats, lastP, keepPartners, rng) {
+  rng = rng || Math.random;
+  if (queue.length < m) return null;
+  var cutKey = queue[m - 1].key;
+  var must = queue.filter(function (q) { return q.key < cutKey; });
+  var opt = queue.filter(function (q) { return q.key === cutKey; });
+  var need = m - must.length;
+  var pool = opt.slice(0, need + 2);
+  var best = null, bestScore = Infinity;
+  combos(pool, need).forEach(function (c) {
+    var group = stayers.concat(must.map(function (q) { return q.id; })).concat(c.map(function (q) { return q.id; }));
+    var rank = c.reduce(function (a, q) { return a + pool.indexOf(q); }, 0);
+    var splits = (keepPartners && stayers.length === 2) ? [[0, 1, 2, 3]] : [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2]];
+    splits.forEach(function (sp) {
+      var S = sp.map(function (i) { return group[i]; });
+      var score = gameCost(S, stats, lastP) + rank * 15 + rng() * 0.5; // คนมาก่อนได้ก่อน เว้นแต่จะทำให้คู่หูซ้ำ
+      if (score < bestScore) { bestScore = score; best = { a: [S[0], S[1]], b: [S[2], S[3]] }; }
+    });
+  });
+  return best;
+}
+
+function liveGames(state) { return state.courts.filter(function (c) { return c.cur; }).map(function (c) { return c.cur; }); }
+function allGames(state) { return state.log.concat(liveGames(state)); }
+function onCourtIds(state) {
+  var s = {}; liveGames(state).forEach(function (g) { g.a.concat(g.b).forEach(function (id) { s[id] = 1; }); }); return s;
+}
+
+function buildQueue(state, exclude) {
+  exclude = exclude || [];
+  var ids = state.players.map(function (p) { return p.id; });
+  var games = allGames(state);
+  var stats = computeStats(ids, games);
+  var on = onCourtIds(state);
+  var q = state.players.filter(function (p) { return p.active && !on[p.id] && exclude.indexOf(p.id) < 0; }).map(function (p) {
+    return { id: p.id, key: (stats.played[p.id] || 0) + (p.offset || 0), left: state.leftAt[p.id] || 0 };
+  });
+  q.sort(function (x, y) { return x.key - y.key || x.left - y.left; });
+  return { queue: q, stats: stats, lastP: lastPartners(games) };
+}
+
+function sameTeam(cur, ids) {
+  return ids.length === 2 && [cur.a, cur.b].some(function (t) { return t.indexOf(ids[0]) >= 0 && t.indexOf(ids[1]) >= 0; });
+}
+
+// คิวคู่ที่ล็อกไว้: คู่เดิมที่ยังรออยู่ครบยังคงเดิม คนที่เหลือจับคู่ต่อท้าย (เลือกคู่ที่เคยเป็นคู่หูกันน้อยสุด)
+function syncPairs(state, exclude) {
+  var b = buildQueue(state, exclude);
+  var waiting = {}; b.queue.forEach(function (x) { waiting[x.id] = x; });
+  var kept = [], used = {};
+  (state.qpairs || []).forEach(function (pr) {
+    if (waiting[pr[0]] && waiting[pr[1]] && !used[pr[0]] && !used[pr[1]]) { kept.push([pr[0], pr[1]]); used[pr[0]] = used[pr[1]] = 1; }
+  });
+  var rest = b.queue.filter(function (x) { return !used[x.id]; });
+  var made = [];
+  while (rest.length >= 2) {
+    var first = rest.shift(), best = 0, bestCost = Infinity;
+    for (var k = 0; k < Math.min(4, rest.length); k++) {
+      var o = rest[k];
+      var cnt = (b.stats.partner[first.id] && b.stats.partner[first.id][o.id]) || 0;
+      var cost = 100 * cnt * cnt + (b.lastP[first.id] === o.id ? 300 : 0) + k * 15;
+      if (cost < bestCost) { bestCost = cost; best = k; }
+    }
+    made.push([first.id, rest.splice(best, 1)[0].id]);
+  }
+  state.qpairs = kept.concat(made);
+  return { pairs: state.qpairs, single: rest.length ? rest[0].id : null };
+}
+
+function fillCourt(state, i, rng) {
+  var c = state.courts[i];
+  if (!c || c.cur) return false;
+  if (state.lock) {
+    var sp = syncPairs(state);
+    if (sp.pairs.length < 2) return false;
+    var A = sp.pairs[0], B = sp.pairs[1];
+    state.qpairs = sp.pairs.slice(2);
+    var st0 = {}; A.concat(B).forEach(function (id) { st0[id] = 1; });
+    c.cur = { a: A.slice(), b: B.slice(), st: st0 }; c.no++;
+    return true;
+  }
+  var b = buildQueue(state);
+  var r = bestFill([], b.queue, 4, b.stats, b.lastP, false, rng);
+  if (!r) return false;
+  var st = {}; r.a.concat(r.b).forEach(function (id) { st[id] = 1; });
+  c.cur = { a: r.a, b: r.b, st: st }; c.no++;
+  return true;
+}
+
+function isFresh(cur) { return cur.a.concat(cur.b).every(function (id) { return cur.st[id] === 1; }); }
+
+// winner: 'a' | 'b' ต้องระบุเมื่อทั้ง 4 คนเพิ่งลงมาด้วยกัน (เกมแรกของกลุ่ม)
+function finishGame(state, i, winner, rng, scores) {
+  var c = state.courts[i];
+  if (!c || !c.cur) return { error: 'nogame' };
+  var cur = c.cur, ids = cur.a.concat(cur.b), fresh = isFresh(cur);
+  // ผู้ชนะจากคะแนน (ถ้ามี) ใช้แทนการเลือกทีมด้วยมือ
+  var sw = null;
+  if (scores && typeof scores.a === 'number' && typeof scores.b === 'number' && scores.a !== scores.b) sw = scores.a > scores.b ? 'a' : 'b';
+  if (fresh && sw) winner = sw;
+  if (fresh && winner !== 'a' && winner !== 'b') return { error: 'winner' };
+  var leavers, stayers;
+  if (fresh) {
+    leavers = winner === 'a' ? cur.b.slice() : cur.a.slice();
+    stayers = winner === 'a' ? cur.a.slice() : cur.b.slice();
+  } else {
+    leavers = ids.filter(function (id) { return cur.st[id] >= MAX_STREAK; });
+    stayers = ids.filter(function (id) { return cur.st[id] < MAX_STREAK; });
+  }
+  var activeMap = {}; state.players.forEach(function (p) { activeMap[p.id] = p.active; });
+  stayers = stayers.filter(function (id) { if (activeMap[id]) return true; leavers.push(id); return false; });
+  if (c.closing) { leavers = leavers.concat(stayers); stayers = []; }
+
+  state.log.push({ court: i + 1, no: c.no, a: cur.a.slice(), b: cur.b.slice(), winner: fresh ? winner : sw, sa: sw ? scores.a : null, sb: sw ? scores.b : null });
+  var oldSt = cur.st;
+  c.cur = null;
+  leavers.forEach(function (id) { state.seq++; state.leftAt[id] = state.seq; });
+  var res = { ok: true, leavers: leavers, incoming: [], idle: false, closed: false };
+  if (c.closing) { res.closed = true; return res; }
+
+  if (state.lock && sameTeam(cur, stayers)) {
+    // โหมดล็อกคู่: คู่ที่อยู่ต่อเจอคู่หน้าสุดในคิว (ซึ่งประกาศไว้แล้ว)
+    var sp = syncPairs(state, stayers.concat(leavers));
+    if (!sp.pairs.length && !state.courts.some(function (cc, j) { return j !== i && cc.cur; })) sp = syncPairs(state, stayers);
+    if (sp.pairs.length) {
+      var inc = sp.pairs[0]; state.qpairs = sp.pairs.slice(1);
+      var st2 = {};
+      stayers.forEach(function (id) { st2[id] = (oldSt[id] || 1) + 1; });
+      inc.forEach(function (id) { st2[id] = 1; res.incoming.push(id); });
+      c.cur = { a: stayers.slice(), b: inc.slice(), st: st2 }; c.no++;
+      return res;
+    }
+    stayers.forEach(function (id) { state.seq++; state.leftAt[id] = state.seq; });
+    res.idle = true; return res;
+  }
+
+  var m = 4 - stayers.length;
+  // คนที่เพิ่งออกจากคอร์ทนี้ ห้ามกลับเข้าคอร์ทเดิมทันที (ต้องให้คอร์ทอื่นจบแล้วสลับกันก่อน)
+  var b = buildQueue(state, stayers.concat(leavers));
+  var r = bestFill(stayers, b.queue, m, b.stats, b.lastP, state.keep, rng);
+  if (!r && !state.courts.some(function (cc, j) { return j !== i && cc.cur; })) {
+    // ไม่มีคอร์ทอื่นให้รอสลับ ให้คนที่เพิ่งออกกลับเข้ามาได้ เพื่อไม่ให้คอร์ทว่างค้าง
+    b = buildQueue(state, stayers);
+    r = bestFill(stayers, b.queue, m, b.stats, b.lastP, state.keep, rng);
+  }
+  if (!r) {
+    stayers.forEach(function (id) { state.seq++; state.leftAt[id] = state.seq; });
+    res.idle = true; return res;
+  }
+  var st = {};
+  r.a.concat(r.b).forEach(function (id) {
+    if (stayers.indexOf(id) >= 0) st[id] = (oldSt[id] || 1) + 1; else { st[id] = 1; res.incoming.push(id); }
+  });
+  c.cur = { a: r.a, b: r.b, st: st }; c.no++;
+  return res;
+}
+
+// เติมคอร์ทที่ว่างอยู่ (ยกเว้นคอร์ทที่เพิ่งจบเกม ไม่ให้วนกลับมาเป็นกลุ่มเดิม)
+function settle(state, exceptIndex) {
+  var filled = [];
+  state.courts.forEach(function (c, i) {
+    if (i !== exceptIndex && !c.cur && !c.closing && fillCourt(state, i)) filled.push(i);
+  });
+  return filled;
+}
+
+
+</script>
+<script>
+(function () {
+  var STORE = 'badminton-queue-v2';
+  var SAMPLE = ['ต้น', 'ฝน', 'แบงค์', 'มด', 'เปรม', 'นุ่น', 'โอ๊ต', 'กิ๊ฟ', 'พิม', 'ภูมิ'];
+  var matrixMode = 'partner';
+  var armTimer = null;
+  var undoStack = [];
+  var state = load();
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  function blank() {
+    return { players: [], nextId: 1, courts: [newCourt(), newCourt()], log: [], leftAt: {}, seq: 0, keep: false, sample: false, drafts: {}, lock: false, qpairs: [], shPrice: '' };
+  }
+  function newCourt() { return { cur: null, no: 0, closing: false }; }
+  function addPlayerTo(st, name) {
+    var id = st.nextId++;
+    st.players.push({ id: id, name: name, active: true, offset: 0 });
+    st.seq++; st.leftAt[id] = st.seq;
+    return id;
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Array.isArray(s.players) && Array.isArray(s.courts) && Array.isArray(s.log)) { s.drafts = s.drafts || {}; s.qpairs = s.qpairs || []; return s; }
+      }
+    } catch (e) {}
+    var st = blank();
+    try {
+      var old = localStorage.getItem('badminton-pairing-v1');
+      if (old) {
+        var o = JSON.parse(old);
+        if (o && !o.sample && Array.isArray(o.players) && o.players.length) {
+          o.players.forEach(function (p) { var id = addPlayerTo(st, p.name); if (p.active === false) st.players[st.players.length - 1].active = false; });
+          if (o.courts > 0 && o.courts <= 8) { st.courts = []; for (var i = 0; i < o.courts; i++) st.courts.push(newCourt()); }
+          settle(st, -1);
+          return st;
+        }
+      }
+    } catch (e) {}
+    SAMPLE.forEach(function (n) { addPlayerTo(st, n); });
+    st.sample = true;
+    settle(st, -1);
+    return st;
+  }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+
+  function allIds() { return state.players.map(function (p) { return p.id; }); }
+  function activePlayers() { return state.players.filter(function (p) { return p.active; }); }
+  function nameOf(id) { for (var i = 0; i < state.players.length; i++) if (state.players[i].id === id) return state.players[i].name; return '?'; }
+  function teamName(t) { return nameOf(t[0]) + ' + ' + nameOf(t[1]); }
+  function names(ids) { return ids.map(nameOf).join(', '); }
+  function hasHistory(id) {
+    return allGames(state).some(function (g) { return g.a.concat(g.b).indexOf(id) >= 0; });
+  }
+  function setStatus(msg, isErr) { var el = $('status'); el.textContent = msg || ''; el.className = 'status' + (isErr ? ' err' : ''); }
+  function snap() {
+    undoStack.push(JSON.stringify({ courts: state.courts, log: state.log, leftAt: state.leftAt, seq: state.seq, qpairs: state.qpairs }));
+    if (undoStack.length > 40) undoStack.shift();
+  }
+  function disarm() {
+    clearTimeout(armTimer); armTimer = null;
+    var b = $('btn-reset'); b.textContent = 'เริ่มนับใหม่ (เก็บรายชื่อ)'; b.classList.remove('btn-danger-armed');
+  }
+  function liveCount() { return state.courts.filter(function (c) { return c.cur; }).length; }
+
+  /* ---------- การทำงาน ---------- */
+  function avgKey() {
+    var act = activePlayers();
+    if (!act.length || !allGames(state).length) return 0;
+    var stats = computeStats(allIds(), allGames(state));
+    return Math.floor(act.reduce(function (a, p) { return a + (stats.played[p.id] || 0) + (p.offset || 0); }, 0) / act.length);
+  }
+
+  function addNames(text) {
+    var parts = text.split(/[\n,]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!parts.length) { setStatus('พิมพ์ชื่ออย่างน้อยหนึ่งชื่อก่อน', true); return false; }
+    snap();
+    var base = avgKey(), added = 0, dup = [];
+    parts.forEach(function (n) {
+      var exists = state.players.some(function (p) { return p.name.toLowerCase() === n.toLowerCase(); });
+      if (exists) { dup.push(n); return; }
+      var id = addPlayerTo(state, n);
+      state.players[state.players.length - 1].offset = base;
+      added++;
+    });
+    if (!added) { undoStack.pop(); setStatus('ชื่อที่ใส่มีอยู่แล้วทั้งหมด', true); return false; }
+    state.sample = false;
+    var filled = settle(state, -1);
+    save(); render();
+    setStatus('เพิ่มแล้ว ' + added + ' คน' + (dup.length ? ' (ข้ามชื่อซ้ำ: ' + dup.join(', ') + ')' : '') +
+      (filled.length ? ' · เริ่มเกมคอร์ท ' + filled.map(function (i) { return i + 1; }).join(', ') : ''));
+    return true;
+  }
+
+  function startCourt(i) {
+    disarm();
+    snap();
+    if (!fillCourt(state, i)) { undoStack.pop(); setStatus('ยังมีคนรอไม่ครบ 4 คน', true); return; }
+    if (state.drafts) delete state.drafts[i];
+    save(); render(); setStatus('เริ่มเกมคอร์ท ' + (i + 1) + ' แล้ว');
+  }
+
+  function finish(i, winner) {
+    disarm();
+    var sc = readScores(i);
+    if (sc && sc.error) { setStatus(sc.error, true); return; }
+    snap();
+    var sh = shVal(i);
+    var res = finishGame(state, i, winner, null, sc);
+    if (res.error) { undoStack.pop(); setStatus(res.error === 'winner' ? 'ใส่คะแนนทั้งสองทีม หรือเลือกทีมที่ชนะก่อน' : 'คอร์ทนี้ไม่มีเกม', true); return; }
+    if (state.log.length) state.log[state.log.length - 1].sh = sh;
+    var n = i + 1;
+    state.drafts = state.drafts || {};
+    if (res.closed) state.drafts = {}; else delete state.drafts[i];
+    if (res.closed) state.courts.splice(i, 1);
+    var filled = settle(state, res.closed ? -1 : i);
+    save(); render();
+    var msg = 'คอร์ท ' + n + ' จบเกม ออก: ' + names(res.leavers);
+    if (res.closed) msg += ' · ปิดคอร์ทแล้ว';
+    else if (res.idle) msg += ' · คอร์ทว่าง รอคนมาเพิ่ม';
+    else if (state.courts[i] && state.courts[i].cur) msg += ' · เข้า: ' + names(res.incoming);
+    if (filled.length) msg += ' · เริ่มเกมคอร์ท ' + filled.map(function (k) { return k + 1; }).join(', ');
+    setStatus(msg);
+  }
+
+  function undo() {
+    disarm();
+    if (!undoStack.length) { setStatus('ไม่มีอะไรให้ย้อนกลับ', true); return; }
+    var s = JSON.parse(undoStack.pop());
+    state.courts = s.courts; state.log = s.log; state.leftAt = s.leftAt; state.seq = s.seq; state.qpairs = s.qpairs || []; state.drafts = {};
+    save(); render(); setStatus('ย้อนกลับแล้ว');
+  }
+
+  function resetAll() {
+    if (!armTimer) {
+      var b = $('btn-reset'); b.textContent = 'กดอีกครั้งเพื่อยืนยัน'; b.classList.add('btn-danger-armed');
+      armTimer = setTimeout(disarm, 3500);
+      return;
+    }
+    disarm();
+    state.log = []; undoStack = []; state.drafts = {}; state.leftAt = {}; state.seq = 0;
+    state.courts = state.courts.filter(function (c) { return !c.closing; }).map(function () { return newCourt(); });
+    if (!state.courts.length) state.courts = [newCourt()];
+    state.players.forEach(function (p, i) { p.offset = 0; state.seq++; state.leftAt[p.id] = state.seq; });
+    settle(state, -1);
+    save(); render(); setStatus('ล้างประวัติทุกเกมแล้ว รายชื่อยังอยู่ครบ และเริ่มเกมใหม่ตามลำดับการมาถึง');
+  }
+
+  var armNames = null;
+  function disarmNames() {
+    clearTimeout(armNames); armNames = null;
+    var b = $('btn-clear-names'); b.textContent = 'ล้างรายชื่อทั้งหมด'; b.classList.remove('btn-danger-armed');
+  }
+  function clearNames() {
+    if (!state.players.length) return;
+    if (!armNames) {
+      var b = $('btn-clear-names'); b.textContent = 'กดอีกครั้งเพื่อลบทุกคน'; b.classList.add('btn-danger-armed');
+      armNames = setTimeout(disarmNames, 3500);
+      return;
+    }
+    disarmNames();
+    var n = state.players.length;
+    state.players = []; state.log = []; state.sample = false; state.nextId = 1; state.leftAt = {}; state.seq = 0; undoStack = []; state.drafts = {};
+    state.courts = state.courts.filter(function (c) { return !c.closing; }).map(function () { return newCourt(); });
+    if (!state.courts.length) state.courts = [newCourt()];
+    save(); render();
+    setStatus('ล้างรายชื่อ ' + n + ' คนและประวัติเกมแล้ว ใส่ชื่อชุดใหม่ได้เลย');
+  }
+
+  function courtsInc() {
+    var last = state.courts[state.courts.length - 1];
+    if (last.closing) { last.closing = false; save(); render(); setStatus('ยกเลิกการปิดคอร์ทที่ ' + state.courts.length); return; }
+    if (state.courts.length >= 8) { setStatus('เพิ่มได้สูงสุด 8 คอร์ท', true); return; }
+    snap(); state.courts.push(newCourt());
+    var filled = settle(state, -1);
+    save(); render();
+    setStatus('เพิ่มคอร์ทที่ ' + state.courts.length + (filled.length ? ' และเริ่มเกมแล้ว' : ''));
+  }
+  function courtsDec() {
+    var n = state.courts.length, last = state.courts[n - 1];
+    if (last.closing) { setStatus('คอร์ทที่ ' + n + ' กำลังรอปิดหลังจบเกม', true); return; }
+    if (state.courts.filter(function (c) { return !c.closing; }).length <= 1) { setStatus('ต้องเหลืออย่างน้อย 1 คอร์ท', true); return; }
+    if (!last.cur) { state.courts.pop(); save(); render(); setStatus('ปิดคอร์ทที่ ' + n + ' แล้ว'); return; }
+    last.closing = true; save(); render(); setStatus('คอร์ทที่ ' + n + ' จะปิดหลังจบเกมนี้');
+  }
+
+  /* ---------- วาดหน้า ---------- */
+  function renderCourtsControl() {
+    var open = state.courts.filter(function (c) { return !c.closing; }).length;
+    $('courts-val').textContent = open;
+    var closing = state.courts.length - open;
+    var spare = activePlayers().length - 4 * open;
+    $('courts-note').textContent = closing ? ('คอร์ทที่ ' + state.courts.length + ' จะปิดหลังจบเกม')
+      : (spare < 0 ? 'ผู้เล่นยังไม่พอเต็มทุกคอร์ท' : (spare === 0 ? 'ไม่มีคนสำรอง คอร์ทที่จบก่อนต้องรอสลับคนกับคอร์ทอื่น' : 'คนสำรอง ' + spare + ' คน'));
+    $('opt-keep').checked = !!state.keep;
+    $('opt-keep').disabled = !!state.lock;
+    $('opt-lock').checked = !!state.lock;
+    $('sh-price').value = state.shPrice || '';
+  }
+
+  function renderPlayers() {
+    var stats = computeStats(allIds(), allGames(state));
+    $('btn-clear-names').disabled = !state.players.length;
+    $('pl-count').textContent = '(' + activePlayers().length + ' คนพร้อมเล่น จากทั้งหมด ' + state.players.length + ')';
+    $('sample-note').innerHTML = state.sample
+      ? '<p class="sample"><span>รายชื่อตัวอย่าง แก้ไขได้ตามต้องการ</span><button type="button" class="btn" id="btn-clear-sample">ล้างรายชื่อตัวอย่าง</button></p>' : '';
+    if (!state.players.length) { $('plist').innerHTML = '<li class="note">ยังไม่มีผู้เล่น เพิ่มรายชื่อด้านบน</li>'; return; }
+    $('plist').innerHTML = state.players.map(function (p, i) {
+      var removable = !hasHistory(p.id);
+      return '<li class="' + (p.active ? '' : 'off') + '">' +
+        '<span class="seq" title="ลำดับการมาถึง">' + (i + 1) + '</span>' +
+        '<label for="pl-' + p.id + '"><input type="checkbox" id="pl-' + p.id + '" data-act="toggle" data-id="' + p.id + '"' + (p.active ? ' checked' : '') + '>' +
+        '<span class="nm">' + esc(p.name) + '</span></label>' +
+        '<span class="meta">เล่น ' + (stats.played[p.id] || 0) + '</span>' +
+        (removable ? '<button type="button" class="x" data-act="remove" data-id="' + p.id + '" aria-label="ลบ ' + esc(p.name) + '">×</button>' : '') +
+        '</li>';
+    }).join('');
+  }
+
+  function plCell(c, id) {
+    var p = state.players.filter(function (q) { return q.id === id; })[0];
+    var leaving = !isFresh(c.cur) && c.cur.st[id] >= MAX_STREAK;
+    var gone = p && !p.active;
+    return '<span class="pl">' + esc(nameOf(id)) + ((leaving || gone || c.closing) ? '<span class="tag">ออกหลังเกมนี้</span>' : '') + '</span>';
+  }
+
+  function draftVal(i, side) { var d = (state.drafts || {})[i]; return d && d[side] != null ? d[side] : ''; }
+  function readScores(i) {
+    var d = (state.drafts || {})[i] || {};
+    var ea = d.a == null || String(d.a).trim() === '', eb = d.b == null || String(d.b).trim() === '';
+    if (ea && eb) return null;
+    if (ea || eb) return { error: 'ใส่คะแนนให้ครบทั้งสองทีม หรือเว้นว่างทั้งคู่' };
+    var a = Number(d.a), b = Number(d.b);
+    if (!(a >= 0 && b >= 0) || a % 1 !== 0 || b % 1 !== 0 || a > 99 || b > 99) return { error: 'คะแนนต้องเป็นจำนวนเต็ม 0 ถึง 99' };
+    if (a === b) return { error: 'คะแนนเท่ากัน ตรวจคะแนนอีกครั้ง' };
+    return { a: a, b: b };
+  }
+  function ctlHtml(i) {
+    var g = state.courts[i].cur, sc = readScores(i), ok = sc && !sc.error;
+    if (isFresh(g)) {
+      if (ok) {
+        var w = sc.a > sc.b ? g.a : g.b;
+        return '<div class="court-ctl"><span class="note">เกมแรกของกลุ่ม ทีมแพ้ออก ระบบดูผู้ชนะจากคะแนน</span><div class="row">' +
+          '<button type="button" class="btn btn-primary" data-act="done" data-court="' + i + '">บันทึกผล · ' + esc(teamName(w)) + ' ชนะ ' + Math.max(sc.a, sc.b) + '–' + Math.min(sc.a, sc.b) + '</button></div></div>';
+      }
+      return '<div class="court-ctl"><span class="note">เกมแรกของกลุ่ม ทีมแพ้ออก ใส่คะแนนทั้งสองทีมด้านบน หรือกดทีมที่ชนะ</span><div class="row">' +
+        '<button type="button" class="btn btn-primary" data-act="win" data-court="' + i + '" data-side="a">' + esc(teamName(g.a)) + ' ชนะ</button>' +
+        '<button type="button" class="btn btn-primary" data-act="win" data-court="' + i + '" data-side="b">' + esc(teamName(g.b)) + ' ชนะ</button></div></div>';
+    }
+    var out = g.a.concat(g.b).filter(function (id) { return g.st[id] >= MAX_STREAK; });
+    return '<div class="court-ctl"><span class="note">ลงครบ ' + MAX_STREAK + ' เกมแล้วออก: ' + esc(names(out)) + '</span>' +
+      '<div class="row"><button type="button" class="btn btn-primary" data-act="done" data-court="' + i + '">' + (ok ? 'บันทึกผลและจบเกม' : 'จบเกม') + '</button></div></div>';
+  }
+
+  var editing = -1;
+  function editHtml(i) {
+    var g = state.courts[i].cur, on = onCourtIds(state);
+    var cands = state.players.filter(function (p) { return !on[p.id]; });
+    var h = '<div class="edit-panel"><span class="note">เลือกคนใหม่แทนผู้เล่นในคอร์ท คนที่ถูกแทนจะไปต่อท้ายคิวรอ ส่วนคนที่เข้ามานับเป็นเกมแรกของเขาในคอร์ทนี้</span>';
+    g.a.concat(g.b).forEach(function (id) {
+      h += '<div class="erow"><span>' + esc(nameOf(id)) + '</span><select data-act="swap" data-court="' + i + '" data-old="' + id + '" aria-label="เปลี่ยน ' + esc(nameOf(id)) + '">' +
+        '<option value="">ไม่เปลี่ยน</option>' + cands.map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + (p.active ? '' : ' (ไม่อยู่)') + '</option>'; }).join('') + '</select></div>';
+    });
+    return h + '</div>';
+  }
+  function swapPlayer(i, oldId, newId) {
+    var c = state.courts[i], g = c && c.cur;
+    if (!g || !state.players.some(function (p) { return p.id === newId; })) return;
+    if (onCourtIds(state)[newId]) { setStatus('คนนี้อยู่ในคอร์ทแล้ว', true); return; }
+    snap();
+    [g.a, g.b].forEach(function (t) { var k = t.indexOf(oldId); if (k >= 0) t[k] = newId; });
+    delete g.st[oldId]; g.st[newId] = 1;
+    state.players.forEach(function (p) { if (p.id === newId) p.active = true; });
+    state.seq++; state.leftAt[oldId] = state.seq;
+    save(); render();
+    setStatus('คอร์ท ' + (i + 1) + ': ' + nameOf(newId) + ' เข้าแทน ' + nameOf(oldId) + ' (' + nameOf(oldId) + ' ไปต่อท้ายคิว)');
+  }
+
+  function shVal(i) { var d = (state.drafts || {})[i]; return d && d.sh != null ? d.sh : 1; }
+  function shuttleRow(i) {
+    return '<div class="sh-row"><span>ลูกแบดที่ใช้ในเกมนี้</span><div class="sh-step">' +
+      '<button type="button" class="btn" data-act="shdec" data-court="' + i + '" aria-label="ลดจำนวนลูก คอร์ท ' + (i + 1) + '">−</button>' +
+      '<output>' + shVal(i) + '</output>' +
+      '<button type="button" class="btn" data-act="shinc" data-court="' + i + '" aria-label="เพิ่มจำนวนลูก คอร์ท ' + (i + 1) + '">+</button></div></div>';
+  }
+  function courtCard(c, i, statsLog, q) {
+    var n = i + 1, head = '<div class="court-head"><h3>คอร์ท ' + n + (c.cur ? ' · เกมที่ ' + c.no : '') + '</h3>' +
+      (c.closing ? '<span class="flag">ปิดหลังจบเกมนี้</span>' : '');
+    if (!c.cur) {
+      var waiting = q.length;
+      var msg = waiting >= 4 ? 'มีคนรอ ' + waiting + ' คน รอคอร์ทอื่นจบเพื่อสลับคน หรือกดเริ่มเกมได้เลย'
+        : 'ว่างอยู่ ตอนนี้มีคนรอ ' + waiting + ' คน ต้องครบ 4 คนถึงจะเริ่มได้';
+      return '<article class="court-wrap">' + head + '</div><div class="idle"><span>' + msg + '</span>' +
+        '<button type="button" class="btn btn-primary" data-act="start" data-court="' + i + '"' + (waiting >= 4 ? '' : ' disabled') + '>เริ่มเกมคอร์ท ' + n + '</button></div></article>';
+    }
+    var g = c.cur, reps = [];
+    [g.a, g.b].forEach(function (t) {
+      var k = (statsLog.partner[t[0]] && statsLog.partner[t[0]][t[1]]) || 0;
+      if (k > 0) reps.push(esc(nameOf(t[0])) + '–' + esc(nameOf(t[1])) + ' (เคย ' + k + ' ครั้ง)');
+    });
+    if (reps.length) head += '<span class="flag">คู่ซ้ำ ' + reps.join(', ') + '</span>';
+    head += '</div>';
+    function scoreInput(side, label) {
+      return '<label>' + label + '<input class="score-in" type="number" inputmode="numeric" min="0" max="99" data-court="' + i + '" data-side="' + side + '" value="' + esc(draftVal(i, side)) + '" aria-label="' + label + ' คอร์ท ' + n + '"></label>';
+    }
+    var scoreRow = '<div class="score-row">' + scoreInput('a', 'คะแนนทีมซ้าย') + scoreInput('b', 'คะแนนทีมขวา') + '</div>';
+    return '<article class="court-wrap">' + head +
+      '<div class="court" role="group" aria-label="คอร์ท ' + n + ': ' + esc(teamName(g.a)) + ' พบ ' + esc(teamName(g.b)) + '">' +
+      '<div class="half a">' + plCell(c, g.a[0]) + plCell(c, g.a[1]) + '</div><div class="net" aria-hidden="true"></div>' +
+      '<div class="half b">' + plCell(c, g.b[0]) + plCell(c, g.b[1]) + '</div></div>' + scoreRow + shuttleRow(i) +
+      '<div id="ctl-' + i + '">' + ctlHtml(i) + '</div>' +
+      '<button type="button" class="btn edit-link" data-act="edit" data-court="' + i + '">' + (editing === i ? 'ปิดการแก้ไขผู้เล่น' : 'แก้ไขผู้เล่นในคอร์ท') + '</button>' +
+      (editing === i ? editHtml(i) : '') + '</article>';
+  }
+
+  function renderRound() {
+    var el = $('round-panel');
+    if (!activePlayers().length) { el.innerHTML = '<div class="empty">เพิ่มรายชื่อผู้เล่นอย่างน้อย 4 คน เกมจะเริ่มให้อัตโนมัติ</div>'; return; }
+    var b = buildQueue(state), statsLog = computeStats(allIds(), state.log);
+    var html = '<h2>คอร์ท</h2><div class="courts">' + state.courts.map(function (c, i) { return courtCard(c, i, statsLog, b.queue); }).join('') + '</div>';
+    if (lockInfo) {
+      html += '<div class="queue"><strong>คิวรอลงสนาม · คู่ที่ล็อกแล้ว</strong>' + (lockInfo.pairs.length
+        ? lockInfo.pairs.map(function (pr, k) { return '<span class="chip' + (k === 0 ? ' next' : '') + '"><b>' + (k + 1) + '</b>' + esc(nameOf(pr[0])) + ' + ' + esc(nameOf(pr[1])) + '</span>'; }).join('')
+        : '<span class="note">ยังไม่มีคู่ในคิว</span>') + '</div>';
+      html += '<p class="note" style="margin-top:8px">' + (lockInfo.pairs.length ? 'คู่ที่ 1 จะลงคอร์ทที่จบก่อน และเจอกับคู่ที่อยู่ต่อ คู่ในคิวไม่เปลี่ยนจนกว่าจะได้ลง' : '') +
+        (lockInfo.single != null ? (lockInfo.pairs.length ? ' · ' : '') + 'รอจับคู่: ' + esc(nameOf(lockInfo.single)) + ' (รอคนถัดไปมาเป็นคู่)' : '') + '</p>';
+    } else {
+      html += '<div class="queue"><strong>คิวรอลงสนาม</strong>' + (b.queue.length
+        ? b.queue.map(function (x, k) { return '<span class="chip' + (k < 2 ? ' next' : '') + '"><b>' + (k + 1) + '</b>' + esc(nameOf(x.id)) + '</span>'; }).join('')
+        : '<span class="note">ไม่มีคนรอ</span>') + '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function renderShuttles() {
+    var price = parseFloat(state.shPrice), hasP = price > 0;
+    var tot = 0, rec = 0, per = {};
+    state.log.forEach(function (g) {
+      if (g.sh == null) return;
+      rec++; tot += g.sh;
+      g.a.concat(g.b).forEach(function (id) { per[id] = per[id] || { g: 0, sh: 0 }; per[id].g++; per[id].sh += g.sh / 4; });
+    });
+    $('sh-total').textContent = rec ? 'ใช้ไปทั้งหมด ' + tot + ' ลูก จาก ' + rec + ' เกม (เฉลี่ย ' + (tot / rec).toFixed(1).replace(/\.0$/, '') + ' ลูก/เกม)' + (hasP ? ' · รวม ' + (tot * price).toFixed(2).replace(/\.00$/, '') + ' บาท' : '') : 'ยังไม่มีเกมที่บันทึกจำนวนลูก';
+    var ids = Object.keys(per).sort(function (x, y) { return per[y].sh - per[x].sh || (nameOf(Number(x)) > nameOf(Number(y)) ? 1 : -1); });
+    $('sh-table').innerHTML = ids.length ? '<thead><tr><th>ผู้เล่น</th><th>เล่น</th><th>ลูกที่หารตามเกม</th>' + (hasP ? '<th>ค่าลูก (บาท)</th>' : '') + '</tr></thead><tbody>' +
+      ids.map(function (id) { var r = per[id]; return '<tr><td>' + esc(nameOf(Number(id))) + '</td><td>' + r.g + '</td><td>' + (Math.round(r.sh * 100) / 100) + '</td>' + (hasP ? '<td>' + (r.sh * price).toFixed(2).replace(/\.00$/, '') + '</td>' : '') + '</tr>'; }).join('') + '</tbody>' : '';
+    $('sh-note').textContent = rec ? 'แต่ละเกมหารค่าลูกเท่ากันทั้ง 4 คนที่ลงเล่นเกมนั้น ปรับจำนวนลูกใต้คอร์ทก่อนกดจบเกม (ค่าเริ่มต้น 1 ลูก)' : 'ปรับจำนวนลูกใต้คอร์ทก่อนกดจบเกม ระบบจะสรุปลูกที่ใช้และค่าลูกต่อคนที่นี่';
+  }
+
+  function renderHistory() {
+    var h = $('history');
+    if (!state.log.length) { h.innerHTML = '<p class="note">เกมที่จบแล้วจะมาอยู่ตรงนี้</p>'; return; }
+    var rows = [];
+    for (var i = state.log.length - 1; i >= 0 && rows.length < 60; i--) {
+      var g = state.log[i];
+      rows.push('<li><span>' + esc(teamName(g.a)) + ' พบ ' + esc(teamName(g.b)) + '</span><span class="who">คอร์ท ' + g.court + ' · เกมที่ ' + g.no +
+        (g.winner ? ' · ชนะ ' + esc(teamName(g.winner === 'a' ? g.a : g.b)) : '') + (g.sa != null ? ' · คะแนน ' + g.sa + '–' + g.sb : '') + (g.sh != null ? ' · ลูก ' + g.sh : '') + '</span></li>');
+    }
+    h.innerHTML = '<ul class="hlist">' + rows.join('') + '</ul>';
+  }
+
+  var resMode = 'player';
+  function renderResults() {
+    var tbl = $('result-table'), note = $('result-note');
+    var rec = {}, known = 0;
+    function get(k) { return rec[k] || (rec[k] = { g: 0, w: 0, l: 0, pf: 0, pa: 0, sg: 0 }); }
+    state.log.forEach(function (g) {
+      var scored = g.sa != null && g.sb != null;
+      [['a', g.a, g.sa, g.sb], ['b', g.b, g.sb, g.sa]].forEach(function (t) {
+        var keys = resMode === 'player' ? t[1].slice() : [Math.min(t[1][0], t[1][1]) + '-' + Math.max(t[1][0], t[1][1])];
+        keys.forEach(function (k) {
+          var r = get(k); r.g++;
+          if (g.winner) { if (g.winner === t[0]) r.w++; else r.l++; }
+          if (scored) { r.pf += t[2]; r.pa += t[3]; r.sg++; }
+        });
+      });
+      if (g.winner) known++;
+    });
+    var rows = Object.keys(rec).map(function (k) {
+      var r = rec[k], dec = r.w + r.l;
+      var label = resMode === 'player' ? nameOf(Number(k)) : k.split('-').map(function (x) { return nameOf(Number(x)); }).join(' + ');
+      return { label: label, r: r, rate: dec ? r.w / dec : -1, diff: r.pf - r.pa };
+    });
+    rows.sort(function (x, y) { return y.r.w - x.r.w || y.rate - x.rate || y.diff - x.diff || y.r.g - x.r.g; });
+    if (!rows.length) {
+      tbl.innerHTML = '';
+      note.textContent = 'ยังไม่มีเกมที่จบ สถิติจะขึ้นเมื่อมีเกมจบและบันทึกผล';
+      return;
+    }
+    tbl.innerHTML = '<thead><tr><th>' + (resMode === 'player' ? 'ผู้เล่น' : 'คู่') + '</th><th>เล่น</th><th>ชนะ</th><th>แพ้</th><th>% ชนะ</th><th>แต้มได้</th><th>แต้มเสีย</th><th>ต่าง</th></tr></thead><tbody>' +
+      rows.map(function (x, k) {
+        var r = x.r, dec = r.w + r.l;
+        return '<tr><td>' + (k + 1) + '. ' + esc(x.label) + '</td><td>' + r.g + '</td><td class="res-win">' + r.w + '</td><td>' + r.l + '</td><td>' +
+          (dec ? Math.round(100 * r.w / dec) + '%' : '–') + '</td><td>' + (r.sg ? r.pf : '–') + '</td><td>' + (r.sg ? r.pa : '–') + '</td><td>' +
+          (r.sg ? (x.diff > 0 ? '+' : '') + x.diff : '–') + '</td></tr>';
+      }).join('') + '</tbody>';
+    note.textContent = known
+      ? 'มีผลแพ้ชนะ ' + known + ' จาก ' + state.log.length + ' เกม นับเฉพาะเกมที่ใส่คะแนน และเกมแรกของกลุ่มที่เลือกทีมชนะ เกมที่ไม่มีผลนับในช่อง "เล่น" เท่านั้น'
+      : 'ยังไม่มีผลแพ้ชนะ ใส่คะแนนใต้คอร์ทตอนจบเกม แล้วสถิติจะขึ้นที่นี่';
+  }
+
+  function renderStats() {
+    var games = allGames(state), ps = state.players;
+    var stats = computeStats(allIds(), games);
+    if (!ps.length) { $('stat-table').innerHTML = ''; $('matrix').innerHTML = ''; return; }
+    var b = buildQueue(state), qpos = {};
+    b.queue.forEach(function (x, k) { qpos[x.id] = k + 1; });
+    var onCourt = {};
+    state.courts.forEach(function (c, i) { if (c.cur) c.cur.a.concat(c.cur.b).forEach(function (id) { onCourt[id] = i + 1; }); });
+    var pairAt = {};
+    if (lockInfo) lockInfo.pairs.forEach(function (pr, k) { pairAt[pr[0]] = { k: k + 1, mate: nameOf(pr[1]) }; pairAt[pr[1]] = { k: k + 1, mate: nameOf(pr[0]) }; });
+    var rows = ps.map(function (p, i) {
+      var m = stats.partner[p.id] || {}, distinct = Object.keys(m).length, rep = 0;
+      Object.keys(m).forEach(function (k) { if (m[k] > 1) rep += m[k] - 1; });
+      var status = onCourt[p.id] ? 'คอร์ท ' + onCourt[p.id] : (qpos[p.id] ? 'คิวที่ ' + qpos[p.id] : 'ไม่อยู่');
+      if (lockInfo && !onCourt[p.id] && pairAt[p.id]) status = 'คิวคู่ที่ ' + pairAt[p.id].k + ' กับ ' + pairAt[p.id].mate;
+      else if (lockInfo && lockInfo.single === p.id) status = 'รอจับคู่';
+      return '<tr><td>' + (i + 1) + ' ' + esc(p.name) + '</td><td>' + status + '</td><td>' + (stats.played[p.id] || 0) + '</td><td>' + distinct + ' / ' + (ps.length - 1) + '</td><td>' + rep + '</td></tr>';
+    }).join('');
+    $('stat-table').innerHTML = '<thead><tr><th>ผู้เล่น</th><th>ตอนนี้</th><th>เล่น (เกม)</th><th>เคยเป็นคู่หูกับ (คน)</th><th>คู่ซ้ำ (ครั้ง)</th></tr></thead><tbody>' + rows + '</tbody>';
+
+    var src = matrixMode === 'partner' ? stats.partner : stats.opp;
+    var head = '<thead><tr><th></th>' + ps.map(function (p, i) { return '<th title="' + esc(p.name) + '">' + (i + 1) + '</th>'; }).join('') + '</tr></thead>';
+    var body = '<tbody>' + ps.map(function (a, i) {
+      return '<tr><td>' + (i + 1) + ' ' + esc(a.name) + '</td>' + ps.map(function (bb) {
+        if (a.id === bb.id) return '<td class="self"></td>';
+        var c = (src[a.id] && src[a.id][bb.id]) || 0;
+        return '<td class="' + (c >= 3 ? 'c3' : c === 2 ? 'c2' : c === 1 ? 'c1' : '') + '">' + (c || '') + '</td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+    $('matrix').innerHTML = head + body;
+  }
+
+  var lockInfo = null;
+  function render() {
+    lockInfo = state.lock ? syncPairs(state) : null;
+    if (lockInfo) save();
+    renderCourtsControl(); renderPlayers(); renderRound(); renderHistory(); renderResults(); renderShuttles(); renderStats();
+  }
+
+  /* ---------- เหตุการณ์ ---------- */
+  $('courts-dec').addEventListener('click', courtsDec);
+  $('courts-inc').addEventListener('click', courtsInc);
+  $('btn-undo').addEventListener('click', undo);
+  $('opt-lock').addEventListener('change', function (e) {
+    state.lock = e.target.checked; state.qpairs = [];
+    save(); render();
+    setStatus(state.lock ? 'ล็อกคู่ในคิวแล้ว ดูคู่ที่รออยู่ที่ "คิวรอลงสนาม" เกมที่กำลังเล่นอยู่ยังเหมือนเดิม' : 'ปิดการล็อกคู่ในคิวแล้ว');
+  });
+  $('btn-clear-names').addEventListener('click', clearNames);
+  $('btn-reset').addEventListener('click', resetAll);
+  $('opt-keep').addEventListener('change', function (e) { state.keep = e.target.checked; save(); setStatus(state.keep ? 'ผู้ชนะที่อยู่ต่อจะเป็นคู่หูเดิม (มีผลกับเกมถัดไป)' : 'โปรแกรมจะแบ่งทีมใหม่เพื่อไม่ให้คู่ซ้ำ'); });
+  $('btn-add').addEventListener('click', function () { var ta = $('new-names'); if (addNames(ta.value)) ta.value = ''; });
+  $('mx-partner').addEventListener('click', function () { matrixMode = 'partner'; $('mx-partner').setAttribute('aria-pressed', 'true'); $('mx-opp').setAttribute('aria-pressed', 'false'); renderStats(); });
+  $('mx-opp').addEventListener('click', function () { matrixMode = 'opp'; $('mx-opp').setAttribute('aria-pressed', 'true'); $('mx-partner').setAttribute('aria-pressed', 'false'); renderStats(); });
+
+  $('rs-player').addEventListener('click', function () { resMode = 'player'; $('rs-player').setAttribute('aria-pressed', 'true'); $('rs-pair').setAttribute('aria-pressed', 'false'); renderResults(); });
+  $('rs-pair').addEventListener('click', function () { resMode = 'pair'; $('rs-pair').setAttribute('aria-pressed', 'true'); $('rs-player').setAttribute('aria-pressed', 'false'); renderResults(); });
+
+  $('sh-price').addEventListener('input', function (e) { state.shPrice = e.target.value; save(); renderShuttles(); });
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains('score-in')) return;
+    var i = Number(t.getAttribute('data-court')), side = t.getAttribute('data-side');
+    state.drafts = state.drafts || {};
+    state.drafts[i] = state.drafts[i] || {};
+    state.drafts[i][side] = t.value;
+    save();
+    var box = $('ctl-' + i);
+    if (box && state.courts[i] && state.courts[i].cur) box.innerHTML = ctlHtml(i);
+  });
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act], #btn-clear-sample');
+    if (!t) return;
+    if (t.id === 'btn-clear-sample') {
+      state.players = []; state.log = []; state.sample = false; state.nextId = 1; state.leftAt = {}; state.seq = 0; undoStack = []; state.drafts = {};
+      state.courts = state.courts.filter(function (c) { return !c.closing; }).map(function () { return newCourt(); });
+      save(); render(); setStatus('ล้างรายชื่อตัวอย่างแล้ว เพิ่มชื่อผู้เล่นจริงตามลำดับที่มาถึงได้เลย');
+      return;
+    }
+    var act = t.getAttribute('data-act');
+    var court = Number(t.getAttribute('data-court'));
+    if (act === 'win') finish(court, t.getAttribute('data-side'));
+    else if (act === 'done') finish(court);
+    else if (act === 'start') startCourt(court);
+    else if (act === 'shinc' || act === 'shdec') {
+      state.drafts = state.drafts || {}; state.drafts[court] = state.drafts[court] || {};
+      state.drafts[court].sh = Math.max(0, Math.min(20, shVal(court) + (act === 'shinc' ? 1 : -1)));
+      save(); render();
+    }
+    else if (act === 'edit') { editing = editing === court ? -1 : court; render(); }
+    else if (act === 'remove') {
+      var id = Number(t.getAttribute('data-id'));
+      state.players = state.players.filter(function (p) { return p.id !== id; });
+      delete state.leftAt[id];
+      save(); render();
+    }
+  });
+
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-act') === 'swap') {
+      if (t.value) swapPlayer(Number(t.getAttribute('data-court')), Number(t.getAttribute('data-old')), Number(t.value));
+      return;
+    }
+    if (!t || !t.getAttribute || t.getAttribute('data-act') !== 'toggle') return;
+    var id = Number(t.getAttribute('data-id'));
+    var p = state.players.filter(function (q) { return q.id === id; })[0];
+    if (!p) return;
+    p.active = t.checked;
+    if (t.checked) {
+      // กลับมาใหม่ถือเป็นการมาถึงใหม่ ไปต่อท้ายคิว และนับเกมที่พลาดเท่าค่าเฉลี่ย จะได้ไม่ลงติดกันยาวเพื่อไล่ให้ทัน
+      state.players = state.players.filter(function (q) { return q.id !== id; }).concat([p]);
+      state.seq++; state.leftAt[id] = state.seq;
+      var stats = computeStats(allIds(), allGames(state));
+      p.offset = Math.max(p.offset || 0, avgKey() - (stats.played[id] || 0));
+      var filled = settle(state, -1);
+      save(); render();
+      setStatus(filled.length ? 'เริ่มเกมคอร์ท ' + filled.map(function (k) { return k + 1; }).join(', ') : '');
+    } else {
+      save(); render();
+    }
+  });
+
+  // ---------- หน้าผู้เล่น (อ่านอย่างเดียว) ----------
+  var pvOpen = false, pvSnap = null, pvViewer = false, pvMe = '';
+  function makeSnap() {
+    var b = buildQueue(state), li = state.lock ? syncPairs(state) : null;
+    var snap = { t: Date.now(), lock: !!li, courts: state.courts.map(function (c, i) {
+      return c.cur ? { n: i + 1, a: c.cur.a.map(nameOf), b: c.cur.b.map(nameOf) } : { n: i + 1 };
+    }) };
+    if (li) { snap.pairs = li.pairs.map(function (pr) { return [nameOf(pr[0]), nameOf(pr[1])]; }); if (li.single != null) snap.single = nameOf(li.single); }
+    else snap.q = b.queue.map(function (x) { return nameOf(x.id); });
+    return snap;
+  }
+  function snapLink() {
+    var j = JSON.stringify(makeSnap());
+    return location.href.split('#')[0] + '#v=' + encodeURIComponent(btoa(unescape(encodeURIComponent(j))));
+  }
+  function decodeSnap(h) {
+    try { return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(h.replace(/^#v=/, '')))))); } catch (e) { return null; }
+  }
+  function clock(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function renderPV() {
+    var el = $('pv'); if (!pvOpen) { el.hidden = true; return; }
+    var snap = pvViewer ? pvSnap : makeSnap();
+    if (!snap) { el.hidden = false; el.innerHTML = '<div class="pv-in"><p class="note">ลิงก์นี้ใช้ไม่ได้ ขอลิงก์ใหม่จากผู้จัด</p></div>'; return; }
+    var allNames = [], seen = {};
+    function addN(n) { if (n && !seen[n]) { seen[n] = 1; allNames.push(n); } }
+    snap.courts.forEach(function (c) { (c.a || []).concat(c.b || []).forEach(addN); });
+    (snap.pairs || []).forEach(function (pr) { pr.forEach(addN); }); (snap.q || []).forEach(addN); addN(snap.single);
+    var h = '<div class="pv-in"><div class="pv-top"><h2>คิวตีแบด</h2><span class="note">' + (pvViewer ? 'ข้อมูล ณ ' + clock(snap.t) + ' · ขอลิงก์ใหม่จากผู้จัดเพื่ออัปเดต' : 'อัปเดตอัตโนมัติ ' + clock(snap.t)) + '</span>' +
+      (pvViewer ? '' : '<span><button type="button" class="btn" data-act="pvcopy">คัดลอกลิงก์ส่งให้ผู้เล่น</button> <button type="button" class="btn btn-primary" data-act="pvclose">ปิด</button></span>') + '</div>';
+    h += '<div class="pv-courts">' + snap.courts.map(function (c) {
+      return '<div class="pv-court"><h3>คอร์ท ' + c.n + '</h3>' + (c.a
+        ? '<div class="tm">' + esc(c.a.join(' + ')) + '</div><div class="vs">พบ</div><div class="tm">' + esc(c.b.join(' + ')) + '</div>'
+        : '<div class="vs">ว่าง</div>') + '</div>';
+    }).join('') + '</div>';
+    // คิว
+    var rows = [], me = pvMe;
+    if (snap.lock) {
+      (snap.pairs || []).forEach(function (pr, k) { rows.push('<div class="qrow' + (k === 0 ? ' first' : '') + '"><b>' + (k + 1) + '</b>' + esc(pr.join(' + ')) + (k === 0 ? '<small>ถัดไป</small>' : '') + '</div>'); });
+      if (snap.single) rows.push('<div class="qrow"><b>·</b>' + esc(snap.single) + '<small>รอจับคู่</small></div>');
+    } else {
+      (snap.q || []).forEach(function (n, k) { rows.push('<div class="qrow' + (k < 2 ? ' first' : '') + '"><b>' + (k + 1) + '</b>' + esc(n) + (k === 0 ? '<small>ถัดไป</small>' : '') + '</div>'); });
+    }
+    h += '<div class="pv-q"><strong>คิวรอลงสนาม</strong>' + (rows.length ? rows.join('') : '<span class="note">ไม่มีคนรอ</span>') + '</div>';
+    // ฉันคือใคร
+    var ans = '';
+    if (me && seen[me]) {
+      var found = false;
+      snap.courts.forEach(function (c) {
+        if (!c.a) return;
+        var ia = c.a.indexOf(me), ib = c.b.indexOf(me);
+        if (ia >= 0 || ib >= 0) { found = true; var mate = ia >= 0 ? c.a[1 - ia] : c.b[1 - ib], opp = ia >= 0 ? c.b : c.a; ans = 'คุณกำลังเล่นคอร์ท ' + c.n + ' คู่กับ ' + mate + ' พบ ' + opp.join(' + '); }
+      });
+      if (!found && snap.lock) (snap.pairs || []).forEach(function (pr, k) { if (pr.indexOf(me) >= 0) { found = true; ans = 'คุณอยู่คิวคู่ที่ ' + (k + 1) + ' คู่กับ ' + pr[1 - pr.indexOf(me)] + (k === 0 ? ' (ถัดไป)' : ' (ก่อนคุณมี ' + k + ' คู่)'); } });
+      if (!found && !snap.lock) (snap.q || []).forEach(function (n, k) { if (n === me) { found = true; ans = 'คุณอยู่คิวที่ ' + (k + 1) + ' ก่อนคุณมี ' + k + ' คน'; } });
+      if (!found) ans = snap.single === me ? 'คุณรอจับคู่ รอคนถัดไปมาเป็นคู่' : 'ตอนนี้ไม่พบชื่อคุณในคอร์ทหรือคิว';
+    }
+    h += '<div class="pv-me"><label for="pv-sel">ฉันคือ</label><select id="pv-sel" data-act="pvme"><option value="">เลือกชื่อของคุณ</option>' +
+      allNames.map(function (n) { return '<option value="' + esc(n) + '"' + (n === me ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>' +
+      (ans ? '<div class="ans">' + esc(ans) + '</div>' : '') + '</div></div>';
+    el.hidden = false;
+    var keep = el.scrollTop; el.innerHTML = h; el.scrollTop = keep;
+  }
+  var baseRender = render;
+  render = function () { baseRender(); if (pvOpen && !pvViewer) renderPV(); };
+  $('btn-pv').addEventListener('click', function () { pvOpen = true; renderPV(); });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('[data-act]') : null; if (!t) return;
+    var a = t.getAttribute('data-act');
+    if (a === 'pvclose') { pvOpen = false; renderPV(); }
+    else if (a === 'pvcopy') {
+      var link = snapLink();
+      var ok = function () { setStatus('คัดลอกลิงก์แล้ว ส่งในไลน์กลุ่มให้ผู้เล่นเปิดดูคิวได้ (ลิงก์เป็นภาพ ณ ตอนนี้ ถ้าคิวเปลี่ยนให้คัดลอกใหม่)'); };
+      var fail = function () { window.prompt && 0; setStatus('คัดลอกอัตโนมัติไม่ได้', true); };
+      try { navigator.clipboard.writeText(link).then(ok, fail); } catch (er) { fail(); }
+    }
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-act') === 'pvme') { pvMe = t.value; renderPV(); }
+  });
+  if (/^#v=/.test(location.hash)) { pvViewer = true; pvOpen = true; pvSnap = decodeSnap(location.hash); }
+
+  render();
+  if (pvViewer) renderPV();
+})();
+</script>
+
+</body>
+</html>
