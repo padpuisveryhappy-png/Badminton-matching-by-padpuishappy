@@ -108,6 +108,24 @@ header.top p { margin: 0; color: var(--ink-2); max-width: 70ch; }
   display: grid; grid-template-columns: 1fr 8px 1fr; background: var(--court); color: var(--court-ink);
   border: 2px solid var(--court-line); border-radius: 4px; min-height: 160px;
 }
+#pv { position: fixed; inset: 0; z-index: 50; overflow: auto; background: var(--bg); color: var(--ink); padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); }
+#pv[hidden] { display: none; }
+.pv-in { max-width: 920px; margin: 0 auto; display: grid; gap: 16px; }
+.pv-top { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.pv-top h2 { margin: 0; }
+.pv-courts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.pv-court { background: var(--court); color: var(--court-ink); border-radius: 14px; padding: 14px; display: grid; gap: 6px; text-align: center; }
+.pv-court h3 { margin: 0; font-size: 0.95rem; font-weight: 500; opacity: 0.85; }
+.pv-court .vs { font-size: 0.8rem; opacity: 0.7; }
+.pv-court .tm { font-size: 1.25rem; font-weight: 700; overflow-wrap: anywhere; }
+.pv-q { display: grid; gap: 8px; }
+.pv-q .qrow { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 1.2rem; font-weight: 700; }
+.pv-q .qrow.first { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.pv-q .qrow b { min-width: 1.6em; font-variant-numeric: tabular-nums; }
+.pv-q .qrow small { font-weight: 400; font-size: 0.85rem; margin-left: auto; opacity: 0.85; }
+.pv-me { background: var(--accent-soft); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; }
+.pv-me select { min-height: 44px; font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 0 8px; }
+.pv-me .ans { font-size: 1.15rem; font-weight: 700; }
 .sh-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 .sh-step { display: flex; align-items: center; gap: 6px; }
 .sh-step button { min-width: 44px; min-height: 44px; font-size: 1.2rem; }
@@ -115,6 +133,10 @@ header.top p { margin: 0; color: var(--ink-2); max-width: 70ch; }
 .sh-sum { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 8px 0; }
 .sh-sum label { display: flex; align-items: center; gap: 8px; }
 .sh-sum input { width: 6.5em; min-height: 40px; font: inherit; border-radius: 8px; border: 1px solid var(--court-line); background: var(--surface); color: var(--ink); padding: 0 8px; }
+.pick { display: grid; gap: 8px; margin-top: 10px; }
+.pick .pk-team { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: center; }
+.pick select { min-height: 44px; font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 0 8px; min-width: 0; }
+.pick .pk-lab { font-weight: 700; font-size: 0.9rem; color: var(--ink-2); }
 .edit-panel { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); display: grid; gap: 8px; }
 .edit-panel .erow { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; align-items: center; }
 .edit-panel select { min-height: 40px; font: inherit; border-radius: 8px; border: 1px solid var(--court-line); background: var(--surface); color: var(--ink); padding: 0 8px; min-width: 0; }
@@ -202,6 +224,13 @@ thead th { font-weight: 500; color: var(--ink-2); }
             </div>
             <span class="note" id="courts-note"></span>
           </div>
+          <div class="mode-box"><span class="note">วิธีจัดคนลงสนาม</span>
+            <div class="seg" role="group" aria-label="วิธีจัดคนลงสนาม">
+              <button type="button" id="mode-auto" aria-pressed="true">ระบบจัดให้</button>
+              <button type="button" id="mode-manual" aria-pressed="false">ผู้จัดเลือกเอง</button>
+            </div>
+            <span class="note" id="mode-note"></span>
+          </div>
           <label class="check" for="opt-keep">
             <input type="checkbox" id="opt-keep">
             <span>ผู้ชนะที่อยู่ต่อเป็นคู่หูเดิม <span class="note">(ปกติโปรแกรมแบ่งทีมใหม่เพื่อไม่ให้คู่ซ้ำ ถ้าติ๊กนี้คู่ซ้ำจะเพิ่มขึ้น)</span></span>
@@ -212,6 +241,7 @@ thead th { font-weight: 500; color: var(--ink-2); }
           </label>
           <div class="row">
             <button type="button" class="btn" id="btn-undo">ย้อนกลับ</button>
+            <button type="button" class="btn" id="btn-pv">หน้าผู้เล่น (ดูคิว)</button>
             <button type="button" class="btn" id="btn-reset">เริ่มนับใหม่ (เก็บรายชื่อ)</button>
           </div>
           <p class="status" id="status" role="status" aria-live="polite"></p>
@@ -275,6 +305,7 @@ thead th { font-weight: 500; color: var(--ink-2); }
   </div>
 </div>
 
+<div id="pv" hidden></div>
 <script>
 // ---- แกนระบบคิวต่อคอร์ท (ไม่ผูกกับหน้าเว็บ ทดสอบด้วย node ได้) ----
 // state = { players:[{id,name,active,offset}], courts:[{cur,no,closing}], log:[{court,no,a,b,winner}],
@@ -404,6 +435,7 @@ function syncPairs(state, exclude) {
 function fillCourt(state, i, rng) {
   var c = state.courts[i];
   if (!c || c.cur) return false;
+  if (state.mode === 'manual') return false; // โหมดผู้จัดเลือกเอง ไม่เติมคอร์ทอัตโนมัติ
   if (state.lock) {
     var sp = syncPairs(state);
     if (sp.pairs.length < 2) return false;
@@ -421,20 +453,43 @@ function fillCourt(state, i, rng) {
   return true;
 }
 
+// โหมดผู้จัดเลือกเอง: ผู้จัดกำหนดคนลงคอร์ท ids = [ซ้าย1, ซ้าย2, ขวา1, ขวา2]
+function startManual(state, i, ids) {
+  var c = state.courts[i];
+  if (!c || c.cur) return { error: 'busy' };
+  if (!ids || ids.length !== 4 || ids.some(function (x) { return !x; })) return { error: 'need4' };
+  var seen = {};
+  for (var k = 0; k < 4; k++) { if (seen[ids[k]]) return { error: 'dup' }; seen[ids[k]] = 1; }
+  var on = onCourtIds(state);
+  if (ids.some(function (x) { return on[x]; })) return { error: 'oncourt' };
+  var st = {}; ids.forEach(function (x) { st[x] = 1; });
+  c.cur = { a: [ids[0], ids[1]], b: [ids[2], ids[3]], st: st }; c.no++;
+  return { ok: true };
+}
+
+// เสนอ 4 คนให้ผู้จัด (ตามคิว + เลี่ยงคู่ซ้ำ) exclude = รหัสที่ถูกเลือกไว้แล้วที่คอร์ทอื่น
+function suggestFour(state, exclude, rng) {
+  var b = buildQueue(state, exclude || []);
+  var r = bestFill([], b.queue, 4, b.stats, b.lastP, false, rng);
+  return r ? r.a.concat(r.b) : null;
+}
+
 function isFresh(cur) { return cur.a.concat(cur.b).every(function (id) { return cur.st[id] === 1; }); }
 
 // winner: 'a' | 'b' ต้องระบุเมื่อทั้ง 4 คนเพิ่งลงมาด้วยกัน (เกมแรกของกลุ่ม)
 function finishGame(state, i, winner, rng, scores) {
   var c = state.courts[i];
   if (!c || !c.cur) return { error: 'nogame' };
-  var cur = c.cur, ids = cur.a.concat(cur.b), fresh = isFresh(cur);
+  var cur = c.cur, ids = cur.a.concat(cur.b), manual = state.mode === 'manual', fresh = !manual && isFresh(cur);
   // ผู้ชนะจากคะแนน (ถ้ามี) ใช้แทนการเลือกทีมด้วยมือ
   var sw = null;
   if (scores && typeof scores.a === 'number' && typeof scores.b === 'number' && scores.a !== scores.b) sw = scores.a > scores.b ? 'a' : 'b';
   if (fresh && sw) winner = sw;
   if (fresh && winner !== 'a' && winner !== 'b') return { error: 'winner' };
   var leavers, stayers;
-  if (fresh) {
+  if (manual) {
+    leavers = ids.slice(); stayers = [];
+  } else if (fresh) {
     leavers = winner === 'a' ? cur.b.slice() : cur.a.slice();
     stayers = winner === 'a' ? cur.a.slice() : cur.b.slice();
   } else {
@@ -451,6 +506,7 @@ function finishGame(state, i, winner, rng, scores) {
   leavers.forEach(function (id) { state.seq++; state.leftAt[id] = state.seq; });
   var res = { ok: true, leavers: leavers, incoming: [], idle: false, closed: false };
   if (c.closing) { res.closed = true; return res; }
+  if (manual) { res.idle = true; return res; } // ผู้จัดเลือกคนลงเกมถัดไปเอง
 
   if (state.lock && sameTeam(cur, stayers)) {
     // โหมดล็อกคู่: คู่ที่อยู่ต่อเจอคู่หน้าสุดในคิว (ซึ่งประกาศไว้แล้ว)
@@ -513,7 +569,7 @@ function settle(state, exceptIndex) {
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   function blank() {
-    return { players: [], nextId: 1, courts: [newCourt(), newCourt()], log: [], leftAt: {}, seq: 0, keep: false, sample: false, drafts: {}, lock: false, qpairs: [], shPrice: '' };
+    return { players: [], nextId: 1, courts: [newCourt(), newCourt()], log: [], leftAt: {}, seq: 0, keep: false, sample: false, drafts: {}, lock: false, qpairs: [], shPrice: '', mode: 'auto', picks: {} };
   }
   function newCourt() { return { cur: null, no: 0, closing: false }; }
   function addPlayerTo(st, name) {
@@ -528,7 +584,7 @@ function settle(state, exceptIndex) {
       var raw = localStorage.getItem(STORE);
       if (raw) {
         var s = JSON.parse(raw);
-        if (s && Array.isArray(s.players) && Array.isArray(s.courts) && Array.isArray(s.log)) { s.drafts = s.drafts || {}; s.qpairs = s.qpairs || []; return s; }
+        if (s && Array.isArray(s.players) && Array.isArray(s.courts) && Array.isArray(s.log)) { s.drafts = s.drafts || {}; s.qpairs = s.qpairs || []; s.picks = s.picks || {}; s.mode = s.mode === 'manual' ? 'manual' : 'auto'; return s; }
       }
     } catch (e) {}
     var st = blank();
@@ -618,13 +674,13 @@ function settle(state, exceptIndex) {
     if (state.log.length) state.log[state.log.length - 1].sh = sh;
     var n = i + 1;
     state.drafts = state.drafts || {};
-    if (res.closed) state.drafts = {}; else delete state.drafts[i];
+    if (res.closed) { state.drafts = {}; state.picks = {}; } else { delete state.drafts[i]; delete state.picks[i]; }
     if (res.closed) state.courts.splice(i, 1);
     var filled = settle(state, res.closed ? -1 : i);
     save(); render();
     var msg = 'คอร์ท ' + n + ' จบเกม ออก: ' + names(res.leavers);
     if (res.closed) msg += ' · ปิดคอร์ทแล้ว';
-    else if (res.idle) msg += ' · คอร์ทว่าง รอคนมาเพิ่ม';
+    else if (res.idle) msg += state.mode === 'manual' ? ' · เลือกผู้เล่นเกมถัดไปได้เลย' : ' · คอร์ทว่าง รอคนมาเพิ่ม';
     else if (state.courts[i] && state.courts[i].cur) msg += ' · เข้า: ' + names(res.incoming);
     if (filled.length) msg += ' · เริ่มเกมคอร์ท ' + filled.map(function (k) { return k + 1; }).join(', ');
     setStatus(msg);
@@ -700,7 +756,11 @@ function settle(state, exceptIndex) {
     $('courts-note').textContent = closing ? ('คอร์ทที่ ' + state.courts.length + ' จะปิดหลังจบเกม')
       : (spare < 0 ? 'ผู้เล่นยังไม่พอเต็มทุกคอร์ท' : (spare === 0 ? 'ไม่มีคนสำรอง คอร์ทที่จบก่อนต้องรอสลับคนกับคอร์ทอื่น' : 'คนสำรอง ' + spare + ' คน'));
     $('opt-keep').checked = !!state.keep;
-    $('opt-keep').disabled = !!state.lock;
+    var man = state.mode === 'manual';
+    $('opt-keep').disabled = !!state.lock || man;
+    $('opt-lock').disabled = man;
+    $('mode-auto').setAttribute('aria-pressed', String(!man)); $('mode-manual').setAttribute('aria-pressed', String(man));
+    $('mode-note').textContent = man ? 'ผู้จัดเลือกผู้เล่นลงแต่ละคอร์ทเอง (ระบบแนะนำตามคิวให้ก่อน) จบเกมแล้วทั้ง 4 คนไปต่อท้ายคิว' : 'ระบบเลือกคนลงให้เองตามคิว ผู้ชนะเกมแรกอยู่ต่อ และคนที่ลงครบ 2 เกมออก';
     $('opt-lock').checked = !!state.lock;
     $('sh-price').value = state.shPrice || '';
   }
@@ -744,6 +804,10 @@ function settle(state, exceptIndex) {
   }
   function ctlHtml(i) {
     var g = state.courts[i].cur, sc = readScores(i), ok = sc && !sc.error;
+    if (state.mode === 'manual') {
+      return '<div class="court-ctl"><span class="note">โหมดผู้จัดเลือกเอง จบเกมแล้วทั้ง 4 คนไปต่อท้ายคิว ใส่คะแนนด้านบนเพื่อบันทึกผลแพ้ชนะ (ไม่บังคับ)</span>' +
+        '<div class="row"><button type="button" class="btn btn-primary" data-act="done" data-court="' + i + '">' + (ok ? 'บันทึกผลและจบเกม' : 'จบเกม') + '</button></div></div>';
+    }
     if (isFresh(g)) {
       if (ok) {
         var w = sc.a > sc.b ? g.a : g.b;
@@ -783,16 +847,86 @@ function settle(state, exceptIndex) {
     setStatus('คอร์ท ' + (i + 1) + ': ' + nameOf(newId) + ' เข้าแทน ' + nameOf(oldId) + ' (' + nameOf(oldId) + ' ไปต่อท้ายคิว)');
   }
 
-  function shVal(i) { var d = (state.drafts || {})[i]; return d && d.sh != null ? d.sh : 1; }
+  function shVal(i) { var d = (state.drafts || {})[i], c = state.courts[i]; return d && d.sh != null ? d.sh : (c && c.no === 1 ? 1 : 0); }
   function shuttleRow(i) {
     return '<div class="sh-row"><span>ลูกแบดที่ใช้ในเกมนี้</span><div class="sh-step">' +
       '<button type="button" class="btn" data-act="shdec" data-court="' + i + '" aria-label="ลดจำนวนลูก คอร์ท ' + (i + 1) + '">−</button>' +
       '<output>' + shVal(i) + '</output>' +
       '<button type="button" class="btn" data-act="shinc" data-court="' + i + '" aria-label="เพิ่มจำนวนลูก คอร์ท ' + (i + 1) + '">+</button></div></div>';
   }
+  function computePicks() {
+    var on = onCourtIds(state), act = {}, res = {}, reserved = {}, q = buildQueue(state).queue;
+    state.players.forEach(function (p) { if (p.active) act[p.id] = 1; });
+    var idle = [];
+    state.courts.forEach(function (c, j) { if (!c.cur) idle.push(j); });
+    idle.forEach(function (j) { // รอบแรก: เก็บตัวเลือกที่ผู้จัดเลือกไว้ (ที่ยังใช้ได้)
+      var saved = (state.picks[j] || []).slice(0, 4), r = [0, 0, 0, 0];
+      for (var k = 0; k < 4; k++) { var id = saved[k]; if (id && act[id] && !on[id] && !reserved[id]) { r[k] = id; reserved[id] = 1; } }
+      res[j] = r;
+    });
+    idle.forEach(function (j) { // รอบสอง: เติมช่องว่างตามคิว ไม่ซ้ำกับคอร์ทอื่น
+      for (var k = 0; k < 4; k++) {
+        if (res[j][k]) continue;
+        for (var z = 0; z < q.length; z++) { if (!reserved[q[z].id]) { res[j][k] = q[z].id; reserved[q[z].id] = 1; break; } }
+      }
+    });
+    return res;
+  }
+  function effPicks(i) { return (computePicks()[i] || [0, 0, 0, 0]).slice(); }
+  function idleIds(except) {
+    var t = {}, all = computePicks();
+    Object.keys(all).forEach(function (j) { if (Number(j) !== except) all[j].forEach(function (id) { if (id) t[id] = 1; }); });
+    return t;
+  }
+  function pickHtml(i, statsLog) {
+    var n = i + 1, pk = effPicks(i), on = onCourtIds(state), taken = idleIds(i), b = buildQueue(state), qpos = {};
+    b.queue.forEach(function (x, k) { qpos[x.id] = k + 1; });
+    var opts = state.players.filter(function (p) { return p.active && !on[p.id] && !taken[p.id]; });
+    function sel(k) {
+      return '<select data-act="pick" data-court="' + i + '" data-slot="' + k + '" aria-label="ผู้เล่นคนที่ ' + (k + 1) + ' คอร์ท ' + n + '">' +
+        (pk[k] ? '' : '<option value="">เลือกผู้เล่น</option>') +
+        opts.map(function (p) { return '<option value="' + p.id + '"' + (p.id === pk[k] ? ' selected' : '') + '>' + esc(p.name) + (qpos[p.id] ? ' · คิว ' + qpos[p.id] : '') + '</option>'; }).join('') + '</select>';
+    }
+    var reps = [];
+    [[pk[0], pk[1]], [pk[2], pk[3]]].forEach(function (t) {
+      if (!t[0] || !t[1]) return;
+      var k = (statsLog.partner[t[0]] && statsLog.partner[t[0]][t[1]]) || 0;
+      if (k > 0) reps.push(esc(nameOf(t[0])) + '–' + esc(nameOf(t[1])) + ' เคยคู่กัน ' + k + ' ครั้ง');
+    });
+    var ready = pk.every(function (x) { return x; });
+    return '<div class="pick"><span class="note">เลือกผู้เล่นที่ลงจริงในคอร์ท ' + n + ' (ระบบใส่คนตามคิวให้ก่อน เปลี่ยนได้)</span>' +
+      '<div class="pk-team"><span class="pk-lab">ทีมซ้าย</span>' + sel(0) + sel(1) + '</div>' +
+      '<div class="pk-team"><span class="pk-lab">ทีมขวา</span>' + sel(2) + sel(3) + '</div>' +
+      (reps.length ? '<span class="note">คู่ซ้ำ: ' + reps.join(', ') + '</span>' : '') +
+      '<div class="row"><button type="button" class="btn btn-primary" data-act="mstart" data-court="' + i + '"' + (ready ? '' : ' disabled') + '>เริ่มเกมคอร์ท ' + n + '</button>' +
+      '<button type="button" class="btn" data-act="mauto" data-court="' + i + '">ให้ระบบเลือกให้ (ไม่ซ้ำคู่เดิม)</button></div></div>';
+  }
+  function manualStart(i) {
+    var pk = effPicks(i);
+    snap();
+    var r = startManual(state, i, pk);
+    if (r.error) { undoStack.pop(); setStatus(r.error === 'need4' ? 'เลือกผู้เล่นให้ครบ 4 คน' : (r.error === 'dup' ? 'มีผู้เล่นซ้ำกัน' : 'ผู้เล่นบางคนอยู่ในคอร์ทอื่นแล้ว'), true); return; }
+    delete state.picks[i]; if (state.drafts) delete state.drafts[i];
+    save(); render(); setStatus('เริ่มเกมคอร์ท ' + (i + 1) + ': ' + teamName(state.courts[i].cur.a) + ' พบ ' + teamName(state.courts[i].cur.b));
+  }
+  function manualSuggest(i) {
+    var taken = Object.keys(idleIds(i)).map(Number);
+    var r = suggestFour(state, taken);
+    if (!r) { setStatus('มีคนรอไม่ครบ 4 คน', true); return; }
+    state.picks[i] = r; save(); render(); setStatus('ระบบเลือกให้แล้ว ปรับเปลี่ยนได้ก่อนกดเริ่มเกม');
+  }
+  function onPick(i, slot, id) {
+    var arr = effPicks(i), j = arr.indexOf(id);
+    if (j >= 0) arr[j] = arr[slot];
+    arr[slot] = id; state.picks[i] = arr; save(); render();
+  }
+
   function courtCard(c, i, statsLog, q) {
     var n = i + 1, head = '<div class="court-head"><h3>คอร์ท ' + n + (c.cur ? ' · เกมที่ ' + c.no : '') + '</h3>' +
       (c.closing ? '<span class="flag">ปิดหลังจบเกมนี้</span>' : '');
+    if (!c.cur && state.mode === 'manual') {
+      return '<article class="court-wrap">' + head + '</div>' + pickHtml(i, statsLog) + '</article>';
+    }
     if (!c.cur) {
       var waiting = q.length;
       var msg = waiting >= 4 ? 'มีคนรอ ' + waiting + ' คน รอคอร์ทอื่นจบเพื่อสลับคน หรือกดเริ่มเกมได้เลย'
@@ -833,7 +967,7 @@ function settle(state, exceptIndex) {
         (lockInfo.single != null ? (lockInfo.pairs.length ? ' · ' : '') + 'รอจับคู่: ' + esc(nameOf(lockInfo.single)) + ' (รอคนถัดไปมาเป็นคู่)' : '') + '</p>';
     } else {
       html += '<div class="queue"><strong>คิวรอลงสนาม</strong>' + (b.queue.length
-        ? b.queue.map(function (x, k) { return '<span class="chip' + (k < 2 ? ' next' : '') + '"><b>' + (k + 1) + '</b>' + esc(nameOf(x.id)) + '</span>'; }).join('')
+        ? b.queue.map(function (x, k) { return '<span class="chip' + (k < (state.mode === 'manual' ? 4 : 2) ? ' next' : '') + '"><b>' + (k + 1) + '</b>' + esc(nameOf(x.id)) + '</span>'; }).join('')
         : '<span class="note">ไม่มีคนรอ</span>') + '</div>';
     }
     el.innerHTML = html;
@@ -851,7 +985,7 @@ function settle(state, exceptIndex) {
     var ids = Object.keys(per).sort(function (x, y) { return per[y].sh - per[x].sh || (nameOf(Number(x)) > nameOf(Number(y)) ? 1 : -1); });
     $('sh-table').innerHTML = ids.length ? '<thead><tr><th>ผู้เล่น</th><th>เล่น</th><th>ลูกที่หารตามเกม</th>' + (hasP ? '<th>ค่าลูก (บาท)</th>' : '') + '</tr></thead><tbody>' +
       ids.map(function (id) { var r = per[id]; return '<tr><td>' + esc(nameOf(Number(id))) + '</td><td>' + r.g + '</td><td>' + (Math.round(r.sh * 100) / 100) + '</td>' + (hasP ? '<td>' + (r.sh * price).toFixed(2).replace(/\.00$/, '') + '</td>' : '') + '</tr>'; }).join('') + '</tbody>' : '';
-    $('sh-note').textContent = rec ? 'แต่ละเกมหารค่าลูกเท่ากันทั้ง 4 คนที่ลงเล่นเกมนั้น ปรับจำนวนลูกใต้คอร์ทก่อนกดจบเกม (ค่าเริ่มต้น 1 ลูก)' : 'ปรับจำนวนลูกใต้คอร์ทก่อนกดจบเกม ระบบจะสรุปลูกที่ใช้และค่าลูกต่อคนที่นี่';
+    $('sh-note').textContent = rec ? 'แต่ละเกมหารค่าลูกเท่ากันทั้ง 4 คนที่ลงเล่นเกมนั้น ปรับจำนวนลูกใต้คอร์ทก่อนกดจบเกม (เกมแรกของแต่ละคอร์ทตั้งไว้ 1 ลูก เกมถัดไปตั้งไว้ 0 ลูก กดบวกเมื่อเปลี่ยนลูกใหม่)' : 'ปรับจำนวนลูกใต้คอร์ทก่อนกดจบเกม ระบบจะสรุปลูกที่ใช้และค่าลูกต่อคนที่นี่';
   }
 
   function renderHistory() {
@@ -956,6 +1090,16 @@ function settle(state, exceptIndex) {
   });
   $('btn-clear-names').addEventListener('click', clearNames);
   $('btn-reset').addEventListener('click', resetAll);
+  function setMode(m) {
+    if (state.mode === m) return;
+    state.mode = m; state.picks = {};
+    if (m === 'manual') { state.lock = false; state.qpairs = []; $('opt-lock').checked = false; }
+    var filled = m === 'auto' ? settle(state, -1) : [];
+    save(); render();
+    setStatus(m === 'manual' ? 'โหมดผู้จัดเลือกเอง เกมที่กำลังเล่นอยู่ยังเหมือนเดิม คอร์ทที่ว่างเลือกผู้เล่นได้เลย' : 'โหมดระบบจัดให้' + (filled.length ? ' · เริ่มเกมคอร์ท ' + filled.map(function (k) { return k + 1; }).join(', ') : ''));
+  }
+  $('mode-auto').addEventListener('click', function () { setMode('auto'); });
+  $('mode-manual').addEventListener('click', function () { setMode('manual'); });
   $('opt-keep').addEventListener('change', function (e) { state.keep = e.target.checked; save(); setStatus(state.keep ? 'ผู้ชนะที่อยู่ต่อจะเป็นคู่หูเดิม (มีผลกับเกมถัดไป)' : 'โปรแกรมจะแบ่งทีมใหม่เพื่อไม่ให้คู่ซ้ำ'); });
   $('btn-add').addEventListener('click', function () { var ta = $('new-names'); if (addNames(ta.value)) ta.value = ''; });
   $('mx-partner').addEventListener('click', function () { matrixMode = 'partner'; $('mx-partner').setAttribute('aria-pressed', 'true'); $('mx-opp').setAttribute('aria-pressed', 'false'); renderStats(); });
@@ -991,6 +1135,8 @@ function settle(state, exceptIndex) {
     if (act === 'win') finish(court, t.getAttribute('data-side'));
     else if (act === 'done') finish(court);
     else if (act === 'start') startCourt(court);
+    else if (act === 'mstart') manualStart(court);
+    else if (act === 'mauto') manualSuggest(court);
     else if (act === 'shinc' || act === 'shdec') {
       state.drafts = state.drafts || {}; state.drafts[court] = state.drafts[court] || {};
       state.drafts[court].sh = Math.max(0, Math.min(20, shVal(court) + (act === 'shinc' ? 1 : -1)));
@@ -1007,6 +1153,10 @@ function settle(state, exceptIndex) {
 
   document.addEventListener('change', function (e) {
     var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-act') === 'pick') {
+      if (t.value) onPick(Number(t.getAttribute('data-court')), Number(t.getAttribute('data-slot')), Number(t.value));
+      return;
+    }
     if (t && t.getAttribute && t.getAttribute('data-act') === 'swap') {
       if (t.value) swapPlayer(Number(t.getAttribute('data-court')), Number(t.getAttribute('data-old')), Number(t.value));
       return;
@@ -1030,7 +1180,90 @@ function settle(state, exceptIndex) {
     }
   });
 
+  // ---------- หน้าผู้เล่น (อ่านอย่างเดียว) ----------
+  var pvOpen = false, pvSnap = null, pvViewer = false, pvMe = '';
+  function makeSnap() {
+    var b = buildQueue(state), li = state.lock ? syncPairs(state) : null;
+    var snap = { t: Date.now(), lock: !!li, courts: state.courts.map(function (c, i) {
+      return c.cur ? { n: i + 1, a: c.cur.a.map(nameOf), b: c.cur.b.map(nameOf) } : { n: i + 1 };
+    }) };
+    if (li) { snap.pairs = li.pairs.map(function (pr) { return [nameOf(pr[0]), nameOf(pr[1])]; }); if (li.single != null) snap.single = nameOf(li.single); }
+    else snap.q = b.queue.map(function (x) { return nameOf(x.id); });
+    return snap;
+  }
+  function snapLink() {
+    var j = JSON.stringify(makeSnap());
+    return location.href.split('#')[0] + '#v=' + encodeURIComponent(btoa(unescape(encodeURIComponent(j))));
+  }
+  function decodeSnap(h) {
+    try { return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(h.replace(/^#v=/, '')))))); } catch (e) { return null; }
+  }
+  function clock(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function renderPV() {
+    var el = $('pv'); if (!pvOpen) { el.hidden = true; return; }
+    var snap = pvViewer ? pvSnap : makeSnap();
+    if (!snap) { el.hidden = false; el.innerHTML = '<div class="pv-in"><p class="note">ลิงก์นี้ใช้ไม่ได้ ขอลิงก์ใหม่จากผู้จัด</p></div>'; return; }
+    var allNames = [], seen = {};
+    function addN(n) { if (n && !seen[n]) { seen[n] = 1; allNames.push(n); } }
+    snap.courts.forEach(function (c) { (c.a || []).concat(c.b || []).forEach(addN); });
+    (snap.pairs || []).forEach(function (pr) { pr.forEach(addN); }); (snap.q || []).forEach(addN); addN(snap.single);
+    var h = '<div class="pv-in"><div class="pv-top"><h2>คิวตีแบด</h2><span class="note">' + (pvViewer ? 'ข้อมูล ณ ' + clock(snap.t) + ' · ขอลิงก์ใหม่จากผู้จัดเพื่ออัปเดต' : 'อัปเดตอัตโนมัติ ' + clock(snap.t)) + '</span>' +
+      (pvViewer ? '' : '<span><button type="button" class="btn" data-act="pvcopy">คัดลอกลิงก์ส่งให้ผู้เล่น</button> <button type="button" class="btn btn-primary" data-act="pvclose">ปิด</button></span>') + '</div>';
+    h += '<div class="pv-courts">' + snap.courts.map(function (c) {
+      return '<div class="pv-court"><h3>คอร์ท ' + c.n + '</h3>' + (c.a
+        ? '<div class="tm">' + esc(c.a.join(' + ')) + '</div><div class="vs">พบ</div><div class="tm">' + esc(c.b.join(' + ')) + '</div>'
+        : '<div class="vs">ว่าง</div>') + '</div>';
+    }).join('') + '</div>';
+    // คิว
+    var rows = [], me = pvMe;
+    if (snap.lock) {
+      (snap.pairs || []).forEach(function (pr, k) { rows.push('<div class="qrow' + (k === 0 ? ' first' : '') + '"><b>' + (k + 1) + '</b>' + esc(pr.join(' + ')) + (k === 0 ? '<small>ถัดไป</small>' : '') + '</div>'); });
+      if (snap.single) rows.push('<div class="qrow"><b>·</b>' + esc(snap.single) + '<small>รอจับคู่</small></div>');
+    } else {
+      (snap.q || []).forEach(function (n, k) { rows.push('<div class="qrow' + (k < 2 ? ' first' : '') + '"><b>' + (k + 1) + '</b>' + esc(n) + (k === 0 ? '<small>ถัดไป</small>' : '') + '</div>'); });
+    }
+    h += '<div class="pv-q"><strong>คิวรอลงสนาม</strong>' + (rows.length ? rows.join('') : '<span class="note">ไม่มีคนรอ</span>') + '</div>';
+    // ฉันคือใคร
+    var ans = '';
+    if (me && seen[me]) {
+      var found = false;
+      snap.courts.forEach(function (c) {
+        if (!c.a) return;
+        var ia = c.a.indexOf(me), ib = c.b.indexOf(me);
+        if (ia >= 0 || ib >= 0) { found = true; var mate = ia >= 0 ? c.a[1 - ia] : c.b[1 - ib], opp = ia >= 0 ? c.b : c.a; ans = 'คุณกำลังเล่นคอร์ท ' + c.n + ' คู่กับ ' + mate + ' พบ ' + opp.join(' + '); }
+      });
+      if (!found && snap.lock) (snap.pairs || []).forEach(function (pr, k) { if (pr.indexOf(me) >= 0) { found = true; ans = 'คุณอยู่คิวคู่ที่ ' + (k + 1) + ' คู่กับ ' + pr[1 - pr.indexOf(me)] + (k === 0 ? ' (ถัดไป)' : ' (ก่อนคุณมี ' + k + ' คู่)'); } });
+      if (!found && !snap.lock) (snap.q || []).forEach(function (n, k) { if (n === me) { found = true; ans = 'คุณอยู่คิวที่ ' + (k + 1) + ' ก่อนคุณมี ' + k + ' คน'; } });
+      if (!found) ans = snap.single === me ? 'คุณรอจับคู่ รอคนถัดไปมาเป็นคู่' : 'ตอนนี้ไม่พบชื่อคุณในคอร์ทหรือคิว';
+    }
+    h += '<div class="pv-me"><label for="pv-sel">ฉันคือ</label><select id="pv-sel" data-act="pvme"><option value="">เลือกชื่อของคุณ</option>' +
+      allNames.map(function (n) { return '<option value="' + esc(n) + '"' + (n === me ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>' +
+      (ans ? '<div class="ans">' + esc(ans) + '</div>' : '') + '</div></div>';
+    el.hidden = false;
+    var keep = el.scrollTop; el.innerHTML = h; el.scrollTop = keep;
+  }
+  var baseRender = render;
+  render = function () { baseRender(); if (pvOpen && !pvViewer) renderPV(); };
+  $('btn-pv').addEventListener('click', function () { pvOpen = true; renderPV(); });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('[data-act]') : null; if (!t) return;
+    var a = t.getAttribute('data-act');
+    if (a === 'pvclose') { pvOpen = false; renderPV(); }
+    else if (a === 'pvcopy') {
+      var link = snapLink();
+      var ok = function () { setStatus('คัดลอกลิงก์แล้ว ส่งในไลน์กลุ่มให้ผู้เล่นเปิดดูคิวได้ (ลิงก์เป็นภาพ ณ ตอนนี้ ถ้าคิวเปลี่ยนให้คัดลอกใหม่)'); };
+      var fail = function () { window.prompt && 0; setStatus('คัดลอกอัตโนมัติไม่ได้', true); };
+      try { navigator.clipboard.writeText(link).then(ok, fail); } catch (er) { fail(); }
+    }
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-act') === 'pvme') { pvMe = t.value; renderPV(); }
+  });
+  if (/^#v=/.test(location.hash)) { pvViewer = true; pvOpen = true; pvSnap = decodeSnap(location.hash); }
+
   render();
+  if (pvViewer) renderPV();
 })();
 </script>
 
